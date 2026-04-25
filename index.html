@@ -673,6 +673,13 @@
     overflow: hidden;
     transition: border-color 0.15s ease;
   }
+  .note.reviewed {
+    background: var(--secondary-tint-soft);
+    border-color: rgba(0, 106, 97, 0.35);
+  }
+  .note.reviewed .note-head {
+    background: rgba(0, 106, 97, 0.08);
+  }
   .note.new { animation: noteIn 0.5s ease both; }
   @keyframes noteIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -717,6 +724,12 @@
     border: 1px solid var(--outline-variant);
   }
   .capture-svg { width: 100%; height: 100%; display: block; }
+  .capture-img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
   .capture-badge {
     position: absolute;
     top: 8px; left: 8px;
@@ -856,7 +869,7 @@
     border: 1px solid var(--outline-variant);
     border-radius: var(--r-lg);
     overflow: hidden;
-    cursor: pointer;
+    cursor: default;
     transition: all 0.15s ease;
   }
   .match:hover {
@@ -870,8 +883,15 @@
     aspect-ratio: 4/3;
     background: var(--surface-container);
     position: relative;
+    overflow: hidden;
   }
   .match-img svg { width: 100%; height: 100%; display: block; }
+  .match-photo {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
   .match-info { padding: 10px 12px; }
   .match-name {
     font-family: 'Manrope', sans-serif;
@@ -884,6 +904,27 @@
     font-size: 11px;
     color: var(--on-surface-variant);
     font-weight: 500;
+  }
+  .match-detail-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .match-chip {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-full);
+    padding: 4px 8px;
+  }
+  .match-reason {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--on-surface-variant);
   }
   .match-confidence {
     position: absolute;
@@ -915,6 +956,25 @@
   .match-spawn:hover { background: var(--secondary); }
   .match.spawned .match-spawn { background: var(--secondary); }
   .match.spawned .match-spawn::before { content: "✓ "; }
+  .match.no-ar {
+    cursor: default;
+  }
+  .match.no-ar:hover {
+    border-color: var(--outline-variant);
+  }
+  .match.no-ar .match-spawn {
+    background: var(--surface-container-high);
+    color: var(--outline);
+    cursor: not-allowed;
+  }
+  .feed-state {
+    padding: 24px;
+    border: 1px dashed var(--outline-variant);
+    border-radius: var(--r-lg);
+    background: var(--surface-container-lowest);
+    color: var(--on-surface-variant);
+    font-size: 14px;
+  }
 
   /* ===== Right column signal cards ===== */
   .readiness {
@@ -2402,7 +2462,7 @@
           </div>
         </div>
 
-        <div class="note-feed">
+        <div class="note-feed" id="noteFeed">
 
           <!-- NOTE 1 -->
           <article class="note new">
@@ -3417,6 +3477,7 @@
   <div id="toastText">Spawning in AR…</div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ============ NAV ============
   const navBtns = document.querySelectorAll('.nav-item[data-view]');
@@ -3441,6 +3502,341 @@
   const liveEyebrow = document.getElementById('liveEyebrow');
   const liveTitle = document.getElementById('liveTitle');
   const liveMeta = document.getElementById('liveMeta');
+  const noteFeed = document.getElementById('noteFeed');
+  const SUPABASE_URL = 'https://kcjjdcpcivyeohapnmeu.snapcloud.dev';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjampkY3BjaXZ5ZW9oYXBubWV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTcxODksImV4cCI6MjA4NDE3MzE4OX0.19Bpd23C_CEItmUHzA6jFQyWW5ZiQTGGFSWJ-1CTRwM';
+  const supabaseClient = window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+  const showroomState = {
+    briefs: [],
+    filter: 'all',
+    realtimeChannel: null
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function fallbackProductSvg() {
+    return '<svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#e0d8c5"/><rect x="10" y="14" width="46" height="62" fill="#c9a577" rx="1"/><rect x="64" y="14" width="46" height="62" fill="#8a6a44" rx="1"/></svg>';
+  }
+
+  function fallbackCaptureSvg() {
+    return '<svg class="capture-svg" viewBox="0 0 160 200"><rect width="160" height="200" fill="#ebe5d8"/><rect x="18" y="26" width="124" height="148" fill="#f4f0e8" stroke="#c6c6cd"/><rect x="28" y="42" width="104" height="54" fill="#c9a577"/><rect x="28" y="104" width="104" height="54" fill="#8a6a44"/></svg>';
+  }
+
+  function formatDateTime(value) {
+    if (!value) return 'Just now';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Just now';
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: 'short'
+    }).format(date);
+  }
+
+  function formatMoney(value) {
+    if (value === null || value === undefined || value === '') return '';
+    if (typeof value === 'string' && /[€$£]/.test(value)) return value;
+    const number = Number(value);
+    if (Number.isNaN(number)) return String(value);
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0
+    }).format(number);
+  }
+
+  function formatJsonValue(value) {
+    if (value === null || value === undefined || value === '') return '';
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'object') {
+      return Object.values(value).flat().filter(Boolean).join(', ');
+    }
+    return String(value);
+  }
+
+  function sentimentClass(sentiment) {
+    const normalized = String(sentiment || '').toLowerCase();
+    if (normalized.includes('pos') || normalized.includes('like')) return 'pos';
+    if (normalized.includes('concern') || normalized.includes('neg') || normalized.includes('reject')) return 'neg';
+    return 'neu';
+  }
+
+  function sentimentLabel(sentiment) {
+    const cls = sentimentClass(sentiment);
+    if (cls === 'pos') return 'Positive reaction';
+    if (cls === 'neg') return 'Concern raised';
+    return 'Just pinned';
+  }
+
+  function matchScoreLabel(score) {
+    if (score === null || score === undefined || score === '') return '';
+    const number = Number(score);
+    if (Number.isNaN(number)) return String(score);
+    return number <= 1 ? Math.round(number * 100) + '%' : Math.round(number) + '%';
+  }
+
+  function normalizeRecommendation(row) {
+    const product = Array.isArray(row.products) ? row.products[0] : row.products;
+    return {
+      id: row.id,
+      pinId: row.pin_id,
+      productId: row.product_id,
+      score: row.match_score,
+      reason: row.match_reason,
+      product: product || {}
+    };
+  }
+
+  function normalizePin(row, recommendations = []) {
+    return {
+      id: row.id,
+      detectedProduct: row.detected_product || 'Detected product',
+      summary: row.summary_text || 'New spatial brief',
+      transcript: row.transcribe_text || '',
+      sentiment: row.sentiment || 'neutral',
+      imageUrl: row.image_url || '',
+      createdAt: row.created_at,
+      recommendations: recommendations.map(normalizeRecommendation)
+    };
+  }
+
+  function renderMatchCard(match, pinId) {
+    const product = match.product || {};
+    const name = product.name || 'Recommended product';
+    const sku = product.sku || 'SKU pending';
+    const category = product.category || 'Catalog match';
+    const price = formatMoney(product.price);
+    const material = formatJsonValue(product.materials);
+    const style = formatJsonValue(product.style);
+    const rating = product.rating ? 'Rating ' + product.rating : '';
+    const hasAR = Boolean(product.model_3d_url);
+    const productId = match.productId || product.id || '';
+    const chips = [material, style, rating]
+      .filter(Boolean)
+      .map(value => '<span class="match-chip">' + escapeHtml(value) + '</span>')
+      .join('');
+    const score = matchScoreLabel(match.score);
+    const meta = [sku, category, price].filter(Boolean).join(' · ');
+
+    return `
+      <div class="match ${hasAR ? '' : 'no-ar'}" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}" data-model-url="${escapeHtml(product.model_3d_url || '')}">
+        <div class="match-img">
+          ${product.image_url ? '<img class="match-photo" src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" />' : fallbackProductSvg()}
+          ${score ? '<span class="match-confidence">' + escapeHtml(score) + '</span>' : ''}
+        </div>
+        <div class="match-info">
+          <div class="match-name">${escapeHtml(name)}</div>
+          <div class="match-meta">${escapeHtml(meta)}</div>
+          ${chips ? '<div class="match-detail-chips">' + chips + '</div>' : ''}
+          ${match.reason ? '<div class="match-reason">' + escapeHtml(match.reason) + '</div>' : ''}
+        </div>
+        <button class="match-spawn" ${hasAR ? 'onclick="spawnAR(this.closest(\'.match\'))"' : 'disabled'}>${hasAR ? 'See in AR' : 'No AR model'}</button>
+      </div>
+    `;
+  }
+
+  function renderBriefCard(brief, index) {
+    const cls = sentimentClass(brief.sentiment);
+    const matches = brief.recommendations || [];
+    const capture = brief.imageUrl
+      ? '<img class="capture-img" src="' + escapeHtml(brief.imageUrl) + '" alt="' + escapeHtml(brief.detectedProduct) + '" loading="lazy" />'
+      : fallbackCaptureSvg();
+    const matchText = matches.length === 1 ? 'See 1 match' : 'See ' + matches.length + ' matches';
+
+    return `
+      <article class="note ${index === 0 ? 'new' : ''}" data-sentiment="${cls}">
+        <div class="note-head">
+          <span class="note-index">No. ${String(index + 1).padStart(2, '0')}</span>
+          <span class="sentiment-dot ${cls}"></span>
+          <span>${sentimentLabel(brief.sentiment)}</span>
+          <span class="note-time">${escapeHtml(formatDateTime(brief.createdAt))}</span>
+        </div>
+        <div class="note-body">
+          <div class="capture">
+            ${capture}
+            <span class="capture-badge">Spatial</span>
+          </div>
+          <div class="note-content">
+            <div class="note-product">Kitchen A · ${escapeHtml(brief.detectedProduct)}</div>
+            <div class="note-headline">${escapeHtml(brief.summary)}</div>
+            ${brief.transcript ? '<div class="note-transcript">"' + escapeHtml(brief.transcript) + '"</div>' : ''}
+            <div class="note-actions">
+              ${matches.length ? '<button class="btn btn-secondary" data-closed-label="' + escapeHtml(matchText) + '" onclick="toggleMatches(this)">' + escapeHtml(matchText) + '</button>' : '<button class="btn btn-outline" disabled>No matches yet</button>'}
+              <button class="btn btn-text" onclick="markReviewed(this)">Mark reviewed</button>
+            </div>
+          </div>
+        </div>
+        ${matches.length ? '<div class="matches"><div class="matches-title">Catalog matches · ranked by fit</div><div class="match-grid">' + matches.map(match => renderMatchCard(match, brief.id)).join('') + '</div></div>' : ''}
+      </article>
+    `;
+  }
+
+  function filteredBriefs() {
+    if (showroomState.filter === 'liked') {
+      return showroomState.briefs.filter(brief => sentimentClass(brief.sentiment) === 'pos');
+    }
+    if (showroomState.filter === 'concerns') {
+      return showroomState.briefs.filter(brief => sentimentClass(brief.sentiment) === 'neg');
+    }
+    return showroomState.briefs;
+  }
+
+  function renderShowroomBriefs() {
+    if (!noteFeed) return;
+    const briefs = filteredBriefs();
+    if (!showroomState.briefs.length) {
+      noteFeed.innerHTML = '<div class="feed-state">Waiting for spatial briefs from SnapCloud...</div>';
+      updateLiveHeader();
+      return;
+    }
+    if (!briefs.length) {
+      noteFeed.innerHTML = '<div class="feed-state">No spatial briefs match this filter yet.</div>';
+      return;
+    }
+    noteFeed.innerHTML = briefs.map(renderBriefCard).join('');
+    updateLiveHeader();
+  }
+
+  function updateLiveHeader() {
+    const total = showroomState.briefs.length;
+    const positives = showroomState.briefs.filter(brief => sentimentClass(brief.sentiment) === 'pos').length;
+    const concerns = showroomState.briefs.filter(brief => sentimentClass(brief.sentiment) === 'neg').length;
+    const neutral = total - positives - concerns;
+    liveEyebrow.innerHTML = '<span class="eyebrow-dot"></span>Live SnapCloud feed';
+    liveTitle.textContent = total ? 'Showroom spatial briefs are landing' : 'Waiting for Snap Spectacles data';
+    liveMeta.innerHTML = '<strong>Kitchen A · Showroom Floor</strong>' + total + ' briefs · ' + positives + ' liked · ' + concerns + ' concerns<br>' + neutral + ' neutral · live updates enabled';
+    statusMeta.textContent = total ? 'Live · ' + total + ' briefs' : 'Live · waiting for first brief';
+  }
+
+  async function fetchRecommendationsForPins(pinIds) {
+    if (!supabaseClient) throw new Error('Supabase client failed to load.');
+    if (!pinIds.length) return new Map();
+    const grouped = new Map(pinIds.map(id => [id, []]));
+    const joinedSelect = `
+      id,
+      pin_id,
+      product_id,
+      match_score,
+      match_reason,
+      products (
+        id,
+        name,
+        sku,
+        category,
+        description,
+        price,
+        materials,
+        style,
+        sizes,
+        rating,
+        image_url,
+        model_3d_url
+      )
+    `;
+    let { data, error } = await supabaseClient
+      .from('pin_recommendations')
+      .select(joinedSelect)
+      .in('pin_id', pinIds)
+      .order('match_score', { ascending: false });
+
+    if (error) {
+      console.warn('Product join failed, falling back to separate product fetch.', error);
+      const fallback = await supabaseClient
+        .from('pin_recommendations')
+        .select('id,pin_id,product_id,match_score,match_reason')
+        .in('pin_id', pinIds)
+        .order('match_score', { ascending: false });
+      if (fallback.error) throw fallback.error;
+      data = fallback.data || [];
+      const productIds = [...new Set(data.map(row => row.product_id).filter(Boolean))];
+      if (productIds.length) {
+        const productsResult = await supabaseClient
+          .from('products')
+          .select('id,name,sku,category,description,price,materials,style,sizes,rating,image_url,model_3d_url')
+          .in('id', productIds);
+        if (productsResult.error) throw productsResult.error;
+        const productsById = new Map((productsResult.data || []).map(product => [product.id, product]));
+        data = data.map(row => ({ ...row, products: productsById.get(row.product_id) || null }));
+      }
+    }
+
+    (data || []).forEach(row => {
+      if (!grouped.has(row.pin_id)) grouped.set(row.pin_id, []);
+      grouped.get(row.pin_id).push(row);
+    });
+    return grouped;
+  }
+
+  async function loadInitialPins() {
+    if (!noteFeed) return;
+    if (!supabaseClient) {
+      noteFeed.innerHTML = '<div class="feed-state">Supabase client could not load. Check your internet connection and refresh.</div>';
+      return;
+    }
+    noteFeed.innerHTML = '<div class="feed-state">Connecting to SnapCloud...</div>';
+    const { data, error } = await supabaseClient
+      .from('pins')
+      .select('id,session_id,customer_id,detected_product,anchor_id,spatial_position,transcribe_text,summary_text,sentiment,image_url,created_at,updated_at')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error(error);
+      noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud pins. Check RLS policies and the public anon key.</div>';
+      return;
+    }
+
+    const pinRows = data || [];
+    let recommendationsByPin = new Map();
+    try {
+      recommendationsByPin = await fetchRecommendationsForPins(pinRows.map(pin => pin.id));
+    } catch (recommendationError) {
+      console.error(recommendationError);
+      showToast('Pins loaded, but recommendations could not load.');
+    }
+    showroomState.briefs = pinRows.map(pin => normalizePin(pin, recommendationsByPin.get(pin.id) || []));
+    renderShowroomBriefs();
+  }
+
+  async function prependLivePin(pin) {
+    let recommendationsByPin = new Map();
+    try {
+      recommendationsByPin = await fetchRecommendationsForPins([pin.id]);
+    } catch (recommendationError) {
+      console.error(recommendationError);
+    }
+    const brief = normalizePin(pin, recommendationsByPin.get(pin.id) || []);
+    showroomState.briefs = [brief, ...showroomState.briefs.filter(existing => existing.id !== brief.id)].slice(0, 20);
+    renderShowroomBriefs();
+    showToast('New spatial brief landed from SnapCloud');
+  }
+
+  function subscribeToPins() {
+    if (!supabaseClient) return;
+    showroomState.realtimeChannel = supabaseClient
+      .channel('showroom-pins')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, payload => {
+        prependLivePin(payload.new).catch(error => {
+          console.error(error);
+          showToast('New pin arrived, but recommendations could not load.');
+        });
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          console.info('Subscribed to live pins.');
+        }
+      });
+  }
 
   segs.forEach(seg => {
     seg.addEventListener('click', () => {
@@ -3456,9 +3852,7 @@
         liveTitle.textContent = 'After Sylvan left the floor';
         liveMeta.innerHTML = '<strong>12 spatial briefs</strong>7 positive · 3 concerns · 2 neutral<br>3 external references · 4 AR spawns';
       } else {
-        liveEyebrow.innerHTML = '<span class="eyebrow-dot"></span>Session in progress · 00:18:42';
-        liveTitle.textContent = 'Sylvan Marchetti is browsing';
-        liveMeta.innerHTML = '<strong>Kitchen Floor · Ground</strong>Started 14:22 · 7 notes · 3 external refs<br>Device PP-07 · Signal nominal';
+        updateLiveHeader();
       }
     });
   });
@@ -3499,7 +3893,14 @@
     const matches = note.querySelector('.matches');
     if (!matches) return;
     const open = matches.classList.toggle('open');
-    btn.textContent = open ? 'Hide matches' : btn.textContent.replace('Hide matches', 'See matches');
+    btn.textContent = open ? 'Hide matches' : (btn.dataset.closedLabel || 'See matches');
+  }
+
+  function markReviewed(btn) {
+    const note = btn.closest('.note');
+    if (!note) return;
+    const reviewed = note.classList.toggle('reviewed');
+    btn.textContent = reviewed ? 'Reviewed' : 'Mark reviewed';
   }
 
   // ============ AR SPAWN ============
@@ -3507,17 +3908,55 @@
   const toastText = document.getElementById('toastText');
   let toastTimer;
 
-  function spawnAR(card, productName) {
+  async function createARSpawnRequest(card) {
+    if (!supabaseClient) throw new Error('Supabase client failed to load.');
+
+    // This row is the handoff from the web portal to the Spectacles app.
+    // Spectacles listens for pending requests, downloads the GLB, and spawns it.
+    const request = {
+      id: crypto.randomUUID(),
+      pin_id: card.dataset.pinId,
+      product_id: Number(card.dataset.productId),
+      model_3d_url: card.dataset.modelUrl,
+      status: 'pending'
+    };
+
+    if (!request.pin_id || !request.product_id || !request.model_3d_url) {
+      throw new Error('Missing pin, product, or model URL for AR spawn request.');
+    }
+
+    const { error } = await supabaseClient
+      .from('ar_spawn_requests')
+      .insert(request);
+
+    if (error) throw error;
+    return request;
+  }
+
+  async function spawnAR(card) {
+    if (card.classList.contains('no-ar')) return;
+    const productName = card.dataset.productName || 'this product';
     const wasSpawned = card.classList.contains('spawned');
     const spawnBtn = card.querySelector('.match-spawn');
     if (wasSpawned) {
       card.classList.remove('spawned');
-      spawnBtn.textContent = 'Spawn in AR';
-      showToast('Removed ' + productName + ' from AR view');
+      spawnBtn.textContent = 'See in AR';
+      showToast(productName + ' is ready to send again');
     } else {
-      card.classList.add('spawned');
-      spawnBtn.textContent = 'Spawned in AR';
-      showToast('Spawning ' + productName + ' in Sylvan\'s AR view…');
+      spawnBtn.disabled = true;
+      spawnBtn.textContent = 'Sending...';
+      try {
+        await createARSpawnRequest(card);
+        card.classList.add('spawned');
+        spawnBtn.disabled = false;
+        spawnBtn.textContent = 'Request sent';
+        showToast('Sent ' + productName + ' to Snap Spectacles');
+      } catch (error) {
+        console.error(error);
+        spawnBtn.disabled = false;
+        spawnBtn.textContent = 'See in AR';
+        showToast('Could not send AR spawn request.');
+      }
     }
   }
   function showToast(msg) {
@@ -3532,6 +3971,9 @@
     chip.addEventListener('click', () => {
       chip.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
       chip.classList.add('on');
+      const label = chip.textContent.toLowerCase();
+      showroomState.filter = label.includes('liked') ? 'liked' : label.includes('concern') ? 'concerns' : 'all';
+      renderShowroomBriefs();
     });
   });
   document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -3588,6 +4030,14 @@
       });
     });
   }
+
+  loadInitialPins().catch(error => {
+    console.error(error);
+    if (noteFeed) {
+      noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud data. Check table permissions and reload.</div>';
+    }
+  });
+  subscribeToPins();
 </script>
 
 </body>
