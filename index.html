@@ -1,34 +1,3594 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PinPoint Captures</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <h1>PinPoint Captures</h1>
-      <span id="status" class="status status-pending">connecting…</span>
-    </header>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PinPoint Portal — Showroom Sales Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Surfaces */
+    --surface: #f7f9fb;
+    --surface-bright: #ffffff;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #f2f4f6;
+    --surface-container: #eceef0;
+    --surface-container-high: #e6e8ea;
+    --surface-container-highest: #e0e3e5;
 
-    <main id="gallery" class="gallery" aria-live="polite"></main>
+    /* Ink */
+    --on-surface: #191c1e;
+    --on-surface-variant: #45464d;
+    --outline: #76777d;
+    --outline-variant: #c6c6cd;
+    --inverse-surface: #2d3133;
+    --inverse-on-surface: #eff1f3;
 
-    <template id="card-template">
-      <article class="card">
-        <div class="card-image-wrap">
-          <img class="card-image" alt="capture" loading="lazy" />
-        </div>
-        <div class="card-body">
-          <p class="card-title"></p>
-          <div class="card-meta">
-            <span class="card-session"></span>
-            <time class="card-time"></time>
+    /* Brand */
+    --primary: #131b2e;          /* Navy Slate */
+    --primary-strong: #0a1020;
+    --on-primary: #ffffff;
+    --primary-tint: #dae2fd;
+    --primary-tint-soft: #eef1fb;
+
+    /* Accent */
+    --secondary: #006a61;        /* Vibrant Teal */
+    --secondary-strong: #005049;
+    --on-secondary: #ffffff;
+    --secondary-tint: #86f2e4;
+    --secondary-tint-soft: #d6f5f0;
+
+    /* Semantic */
+    --error: #ba1a1a;
+    --error-tint: #ffdad6;
+    --success: #006a61;
+    --warning: #8a6a1f;
+    --warning-tint: #fcdeb5;
+
+    /* Radius */
+    --r-sm: 2px;
+    --r: 4px;
+    --r-md: 6px;
+    --r-lg: 8px;
+    --r-xl: 12px;
+    --r-full: 9999px;
+
+    /* Shadow (used very sparingly) */
+    --shadow-float: 0 4px 12px rgba(15, 23, 42, 0.05);
+    --shadow-active: 0 6px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body { min-height: 100vh; }
+
+  /* ============================================================ */
+  /* TYPOGRAPHY                                                    */
+  /* ============================================================ */
+  .h-xl {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: -0.02em;
+  }
+  .h-lg {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -0.01em;
+  }
+  .h-md {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .h-sm {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 24px;
+    letter-spacing: -0.005em;
+  }
+  .body-lg { font-size: 18px; line-height: 28px; }
+  .body-md { font-size: 16px; line-height: 24px; }
+  .body-sm { font-size: 14px; line-height: 20px; }
+  .label-md {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: 0.01em;
+  }
+  .label-sm {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ============================================================ */
+  /* APP SHELL                                                     */
+  /* ============================================================ */
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    background: var(--surface-container-lowest);
+    border-right: 1px solid var(--outline-variant);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 24px;
+    text-decoration: none;
+    color: var(--on-surface);
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 8px;
+  }
+  .brand-logo {
+    width: 32px; height: 32px;
+    border-radius: var(--r);
+    background: var(--primary);
+    display: grid; place-items: center;
+    color: var(--on-primary);
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+  }
+  .brand-name {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+  }
+
+  .nav-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    padding: 12px 12px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px;
+    min-height: 44px;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--r);
+    transition: background 0.15s ease, color 0.15s ease;
+    width: 100%;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--surface-container); color: var(--on-surface); }
+  .nav-item:active { background: var(--surface-container-high); }
+  .nav-item.active {
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 600;
+  }
+  .nav-item.active .nav-icon { color: var(--on-primary); }
+
+  .nav-icon {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+    color: var(--on-surface-variant);
+  }
+  .nav-item.active .nav-icon path,
+  .nav-item.active .nav-icon rect,
+  .nav-item.active .nav-icon circle,
+  .nav-item.active .nav-icon line { stroke: var(--on-primary); }
+
+  .nav-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--secondary);
+    color: var(--on-secondary);
+    padding: 2px 7px;
+    border-radius: var(--r-full);
+    line-height: 1.4;
+  }
+  .nav-item.active .nav-badge { background: var(--secondary-tint); color: var(--secondary-strong); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline-variant);
+  }
+
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: var(--r);
+  }
+  .user-avatar {
+    width: 36px; height: 36px;
+    border-radius: var(--r-full);
+    background: var(--primary);
+    color: var(--on-primary);
+    display: grid; place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .user-info { min-width: 0; flex: 1; }
+  .user-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .user-role {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    line-height: 1.3;
+  }
+
+  /* ===== Main content area ===== */
+  .main {
+    padding: 32px;
+    max-width: 1440px;
+    width: 100%;
+  }
+
+  .view { display: none; animation: viewIn 0.4s ease both; }
+  .view.active { display: block; }
+  @keyframes viewIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============================================================ */
+  /* PAGE HEADER                                                   */
+  /* ============================================================ */
+  .page-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 24px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eyebrow-dot {
+    width: 8px; height: 8px;
+    border-radius: var(--r-full);
+    background: var(--secondary);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 106, 97, 0.5); }
+    50% { box-shadow: 0 0 0 6px rgba(0, 106, 97, 0); }
+  }
+  .page-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+  }
+  .page-meta {
+    text-align: right;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    line-height: 1.6;
+  }
+  .page-meta strong {
+    display: block;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--on-surface);
+    margin-bottom: 2px;
+  }
+
+  /* ============================================================ */
+  /* SESSION-MODE TOGGLE                                           */
+  /* ============================================================ */
+  .session-toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    margin-bottom: 24px;
+  }
+  .session-toggle {
+    display: inline-flex;
+    background: var(--surface-container);
+    border-radius: var(--r);
+    padding: 4px;
+  }
+  .seg {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    min-height: 44px;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    letter-spacing: 0.005em;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+  .seg:hover:not(.disabled):not(.on) {
+    color: var(--on-surface);
+    background: rgba(255,255,255,0.5);
+  }
+  .seg.on {
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  .seg.disabled {
+    color: var(--outline);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .seg-dot {
+    width: 8px; height: 8px;
+    border-radius: var(--r-full);
+    background: var(--outline);
+    flex-shrink: 0;
+  }
+  .seg.live-mode .seg-dot {
+    background: var(--secondary);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .seg.ready .seg-dot { background: var(--secondary); }
+  .seg.ready { color: var(--secondary); }
+  .seg.ready::after {
+    content: "NEW";
+    position: absolute;
+    top: -4px; right: -4px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    background: var(--secondary);
+    color: var(--on-secondary);
+    padding: 2px 5px;
+    border-radius: var(--r-full);
+    font-weight: 700;
+  }
+
+  .toggle-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--on-surface-variant);
+  }
+  .toggle-meta strong { color: var(--on-surface); font-weight: 600; }
+
+  .end-session-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    min-height: 44px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .end-session-btn:hover {
+    border-color: var(--primary);
+    background: var(--surface-container-low);
+  }
+
+  .session-mode { display: none; animation: viewIn 0.3s ease both; }
+  .session-mode.active { display: block; }
+
+  /* ============================================================ */
+  /* LIVE SESSION GRID                                             */
+  /* ============================================================ */
+  .live-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Generic card */
+  .card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--outline-variant);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .card-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    color: var(--on-surface);
+  }
+  .card-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    padding: 4px 8px;
+    background: var(--surface-container);
+    border-radius: var(--r-sm);
+  }
+  .card-tag.live {
+    color: var(--secondary);
+    background: var(--secondary-tint-soft);
+  }
+  .card-body { padding: 20px; }
+
+  /* ===== Spatial map ===== */
+  .map-wrap { padding: 16px; }
+  .map-surface {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    background:
+      linear-gradient(var(--outline-variant) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, var(--outline-variant) 1px, transparent 1px) 0 0 / 24px 24px,
+      var(--surface-container-low);
+    border-radius: var(--r);
+    border: 1px solid var(--outline-variant);
+  }
+  .room {
+    position: absolute;
+    border: 1.5px solid var(--on-surface-variant);
+    background: rgba(255,255,255,0.5);
+    border-radius: 2px;
+  }
+  .room-label {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-variant);
+    padding: 2px 6px;
+    background: var(--surface-container-lowest);
+    border-radius: 2px;
+  }
+  .pin {
+    position: absolute;
+    width: 14px; height: 14px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+  }
+  .pin-dot {
+    position: absolute; inset: 0;
+    border-radius: var(--r-full);
+    background: var(--secondary);
+    box-shadow: 0 0 0 3px var(--surface-container-lowest), 0 0 0 4px var(--secondary);
+  }
+  .pin.positive .pin-dot { background: var(--secondary); box-shadow: 0 0 0 3px var(--surface-container-lowest), 0 0 0 4px var(--secondary); }
+  .pin.negative .pin-dot { background: var(--error); box-shadow: 0 0 0 3px var(--surface-container-lowest), 0 0 0 4px var(--error); }
+  .pin.neutral .pin-dot { background: var(--warning); box-shadow: 0 0 0 3px var(--surface-container-lowest), 0 0 0 4px var(--warning); }
+  .pin.active::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    border-radius: var(--r-full);
+    border: 1.5px solid var(--secondary);
+    animation: pinPulse 1.6s ease-out infinite;
+  }
+  @keyframes pinPulse {
+    from { transform: scale(0.6); opacity: 1; }
+    to { transform: scale(1.8); opacity: 0; }
+  }
+  .customer-marker {
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--primary);
+    border: 2px solid var(--surface-container-lowest);
+    border-radius: var(--r-full);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  .customer-marker::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    border: 1.5px dashed var(--primary);
+    border-radius: var(--r-full);
+    opacity: 0.25;
+  }
+  .map-legend {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--outline-variant);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 8px; height: 8px; border-radius: var(--r-full); }
+
+  /* ===== Notes Pinboard ===== */
+  .pinboard { padding: 20px; }
+  .pinboard-textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    border-radius: var(--r);
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--on-surface);
+    resize: vertical;
+    transition: border-color 0.15s ease;
+  }
+  .pinboard-textarea:focus {
+    outline: none;
+    border-color: var(--secondary);
+    border-width: 2px;
+    padding: 11px;
+  }
+  .pinboard-helper {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ===== Note feed (middle column) ===== */
+  .feed-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 4px 16px;
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 16px;
+  }
+  .feed-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .feed-controls {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-container);
+    padding: 4px;
+    border-radius: var(--r);
+  }
+  .chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    min-height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all 0.15s ease;
+  }
+  .chip:hover:not(.on) { color: var(--on-surface); }
+  .chip.on {
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+
+  .note-feed { display: flex; flex-direction: column; gap: 16px; }
+
+  .note {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+  }
+  .note.new { animation: noteIn 0.5s ease both; }
+  @keyframes noteIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .note-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--surface-container-low);
+    border-bottom: 1px solid var(--outline-variant);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+  .note-index {
+    color: var(--primary);
+    font-weight: 700;
+    font-family: 'Manrope', sans-serif;
+  }
+  .note-time { margin-left: auto; }
+  .sentiment-dot { width: 8px; height: 8px; border-radius: var(--r-full); flex-shrink: 0; }
+  .sentiment-dot.pos { background: var(--secondary); }
+  .sentiment-dot.neg { background: var(--error); }
+  .sentiment-dot.neu { background: var(--warning); }
+
+  .note-body {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .capture {
+    aspect-ratio: 4/5;
+    border-radius: var(--r);
+    background: var(--surface-container);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--outline-variant);
+  }
+  .capture-svg { width: 100%; height: 100%; display: block; }
+  .capture-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    background: rgba(19, 27, 46, 0.85);
+    color: var(--on-primary);
+    border-radius: var(--r-sm);
+  }
+
+  .note-content { min-width: 0; }
+  .note-product {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-bottom: 6px;
+  }
+  .note-headline {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    margin-bottom: 12px;
+    color: var(--on-surface);
+  }
+  .note-transcript {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--on-surface-variant);
+    padding: 12px 14px;
+    background: var(--surface-container-low);
+    border-left: 3px solid var(--secondary);
+    border-radius: 0 var(--r) var(--r) 0;
+    margin-bottom: 12px;
+  }
+  .note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .note-tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    background: var(--surface-container);
+    border-radius: var(--r-full);
+    color: var(--on-surface-variant);
+  }
+  .note-tag.pos {
+    background: var(--secondary-tint-soft);
+    color: var(--secondary-strong);
+  }
+  .note-tag.neg {
+    background: var(--error-tint);
+    color: var(--error);
+  }
+
+  .note-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Buttons ===== */
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 14px;
+    min-height: 44px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--on-surface);
+    cursor: pointer;
+    border-radius: var(--r);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.005em;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
+  }
+  .btn-primary:hover { background: var(--primary-strong); border-color: var(--primary-strong); }
+  .btn-secondary {
+    background: var(--secondary);
+    color: var(--on-secondary);
+    border-color: var(--secondary);
+  }
+  .btn-secondary:hover { background: var(--secondary-strong); border-color: var(--secondary-strong); }
+  .btn-outline {
+    border-color: var(--outline-variant);
+    color: var(--on-surface);
+    background: var(--surface-container-lowest);
+  }
+  .btn-outline:hover { border-color: var(--primary); background: var(--surface-container-low); }
+  .btn-text {
+    color: var(--on-surface-variant);
+  }
+  .btn-text:hover { color: var(--on-surface); background: var(--surface-container); }
+  .btn-sm { padding: 8px 12px; min-height: 36px; font-size: 12px; }
+
+  /* ===== Match cards under note ===== */
+  .matches {
+    border-top: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    padding: 16px 20px 20px;
+    display: none;
+  }
+  .matches.open { display: block; animation: viewIn 0.3s ease both; }
+  .matches-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-bottom: 12px;
+  }
+  .match-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .match {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .match:hover {
+    border-color: var(--primary);
+  }
+  .match.spawned {
+    border-color: var(--secondary);
+    border-width: 2px;
+  }
+  .match-img {
+    aspect-ratio: 4/3;
+    background: var(--surface-container);
+    position: relative;
+  }
+  .match-img svg { width: 100%; height: 100%; display: block; }
+  .match-info { padding: 10px 12px; }
+  .match-name {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .match-meta {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+  }
+  .match-confidence {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    background: rgba(19,27,46,0.85);
+    color: var(--on-primary);
+    border-radius: var(--r-sm);
+    letter-spacing: 0.02em;
+  }
+  .match-spawn {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px;
+    min-height: 44px;
+    background: var(--primary);
+    color: var(--on-primary);
+    border: none;
+    cursor: pointer;
+    border-top: 1px solid var(--outline-variant);
+    transition: background 0.15s ease;
+  }
+  .match-spawn:hover { background: var(--secondary); }
+  .match.spawned .match-spawn { background: var(--secondary); }
+  .match.spawned .match-spawn::before { content: "✓ "; }
+
+  /* ===== Right column signal cards ===== */
+  .readiness {
+    padding: 24px;
+    background: var(--primary);
+    color: var(--on-primary);
+    border-radius: var(--r-lg);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .readiness::before {
+    content: "";
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    border-radius: var(--r-full);
+    background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+    opacity: 0.4;
+  }
+  .readiness-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-tint);
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
+  }
+  .readiness-score {
+    font-family: 'Manrope', sans-serif;
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 2;
+  }
+  .readiness-score sup {
+    font-size: 22px;
+    vertical-align: super;
+    opacity: 0.65;
+    margin-left: 2px;
+    font-weight: 600;
+  }
+  .readiness-label {
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.85;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+  }
+  .readiness-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--r-full);
+    overflow: hidden;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+  }
+  .readiness-bar-fill {
+    height: 100%;
+    width: 78%;
+    background: var(--secondary);
+    border-radius: var(--r-full);
+  }
+  .approach-btn {
+    width: 100%;
+    padding: 14px;
+    min-height: 48px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--secondary);
+    color: var(--on-secondary);
+    border: none;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+  }
+  .approach-btn:hover { background: var(--secondary-tint); color: var(--secondary-strong); }
+  .approach-btn::after {
+    content: "→";
+    font-size: 18px;
+  }
+
+  .signal-card {
+    padding: 20px;
+    margin-bottom: 12px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+  }
+  .signal-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-bottom: 8px;
+  }
+  .signal-value {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--on-surface);
+  }
+  .signal-value .accent { color: var(--secondary); }
+  .signal-sub {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .opener-card {
+    padding: 20px;
+    background: var(--secondary-tint-soft);
+    border: 1px solid var(--secondary-tint);
+    border-radius: var(--r-lg);
+    margin-bottom: 12px;
+  }
+  .opener-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-strong);
+    margin-bottom: 10px;
+  }
+  .opener-text {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--on-surface);
+  }
+  .opener-text strong {
+    font-weight: 700;
+    background: var(--secondary-tint);
+    padding: 0 3px;
+    border-radius: var(--r-sm);
+  }
+
+  .concern-list {
+    margin-top: 8px;
+  }
+  .concern-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--outline-variant);
+    font-size: 13px;
+  }
+  .concern-item:last-child { border-bottom: none; }
+  .concern-item strong { font-weight: 600; display: block; }
+  .concern-item span {
+    color: var(--on-surface-variant);
+    font-size: 12px;
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* ============================================================ */
+  /* SESSION SUMMARY                                               */
+  /* ============================================================ */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .summary-hero {
+    padding: 32px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-hero::before {
+    content: "";
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 200px; height: 200px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-full);
+  }
+  .summary-hero::after {
+    content: "";
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 140px; height: 140px;
+    border: 1px solid var(--secondary-tint);
+    border-radius: var(--r-full);
+  }
+  .hero-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-persona {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+    color: var(--on-surface);
+    position: relative;
+    z-index: 2;
+  }
+  .hero-persona .accent { color: var(--secondary); }
+  .hero-tagline {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--on-surface-variant);
+    max-width: 580px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-facts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--outline-variant);
+    position: relative;
+    z-index: 2;
+  }
+  .fact-value {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: -0.015em;
+    color: var(--on-surface);
+  }
+  .fact-value .accent { color: var(--secondary); }
+  .fact-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-top: 6px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 28px 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .section-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .section-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+
+  .flag-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .flag-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    position: relative;
+  }
+  .flag-card.pos { border-top: 3px solid var(--secondary); }
+  .flag-card.neg { border-top: 3px solid var(--error); }
+  .flag-card.neu { border-top: 3px solid var(--warning); }
+  .flag-img { aspect-ratio: 4/3; background: var(--surface-container); }
+  .flag-img svg { width: 100%; height: 100%; display: block; }
+  .flag-body { padding: 14px 16px 16px; }
+  .flag-name {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+    margin-bottom: 4px;
+  }
+  .flag-sku {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    margin-bottom: 10px;
+  }
+  .flag-quote {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+    padding: 10px 12px;
+    background: var(--surface-container-low);
+    border-radius: var(--r);
+    border-left: 2px solid var(--outline-variant);
+  }
+  .flag-card.pos .flag-quote { border-left-color: var(--secondary); }
+  .flag-card.neg .flag-quote { border-left-color: var(--error); }
+  .flag-card.neu .flag-quote { border-left-color: var(--warning); }
+
+  /* Right rail */
+  .panel { padding: 20px; }
+
+  .pref-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 56px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .pref-row:last-child { border-bottom: none; }
+  .pref-label { font-size: 13px; color: var(--on-surface); font-weight: 500; }
+  .pref-bar {
+    height: 6px;
+    background: var(--surface-container-high);
+    border-radius: var(--r-full);
+    overflow: hidden;
+  }
+  .pref-bar-fill {
+    height: 100%;
+    background: var(--secondary);
+    border-radius: var(--r-full);
+  }
+  .pref-bar-fill.warn { background: var(--error); }
+  .pref-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    text-align: right;
+  }
+
+  .budget-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-bottom: 10px;
+  }
+  .budget-range {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.015em;
+    color: var(--on-surface);
+    margin-bottom: 8px;
+  }
+  .budget-range .accent { color: var(--secondary); }
+  .budget-signal {
+    font-size: 12.5px;
+    color: var(--on-surface-variant);
+    line-height: 1.5;
+  }
+
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+  .timeline-event { font-size: 13px; line-height: 1.5; }
+  .timeline-event strong { font-weight: 600; }
+
+  /* ===== Summary action bar (Send recap, etc.) ===== */
+  .summary-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+    padding: 14px 20px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    align-items: center;
+  }
+  .summary-actions-label {
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+  .summary-actions-label svg {
+    width: 18px; height: 18px;
+    color: var(--secondary);
+  }
+  .summary-actions-label strong {
+    color: var(--on-surface);
+    font-weight: 600;
+  }
+
+  /* ===== Keywords extracted section ===== */
+  .keywords-section {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .keywords-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .keywords-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: -0.005em;
+    color: var(--on-surface);
+  }
+  .keywords-sub {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    margin-bottom: 20px;
+  }
+  .keyword-group {
+    margin-bottom: 18px;
+  }
+  .keyword-group:last-child { margin-bottom: 0; }
+  .keyword-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .keyword-group-label .group-dot {
+    width: 8px; height: 8px;
+    border-radius: var(--r-full);
+  }
+  .keyword-group.pos .keyword-group-label { color: var(--secondary); }
+  .keyword-group.pos .group-dot { background: var(--secondary); }
+  .keyword-group.neg .keyword-group-label { color: var(--error); }
+  .keyword-group.neg .group-dot { background: var(--error); }
+  .keyword-group.neu .keyword-group-label { color: var(--warning); }
+  .keyword-group.neu .group-dot { background: var(--warning); }
+  .keyword-group-count {
+    margin-left: auto;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .keyword-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .kw-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--r-full);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--surface-container);
+    color: var(--on-surface);
+    border: 1px solid transparent;
+  }
+  .kw-chip-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--r-full);
+    background: var(--surface-container-lowest);
+    color: var(--on-surface-variant);
+  }
+  .keyword-group.pos .kw-chip {
+    background: var(--secondary-tint-soft);
+    color: var(--secondary-strong);
+    border-color: var(--secondary-tint);
+  }
+  .keyword-group.pos .kw-chip-count {
+    background: var(--surface-container-lowest);
+    color: var(--secondary-strong);
+  }
+  .keyword-group.neg .kw-chip {
+    background: var(--error-tint);
+    color: var(--error);
+    border-color: rgba(186,26,26,0.2);
+  }
+  .keyword-group.neg .kw-chip-count {
+    background: var(--surface-container-lowest);
+    color: var(--error);
+  }
+  .keyword-group.neu .kw-chip {
+    background: var(--warning-tint);
+    color: var(--warning);
+    border-color: rgba(138,106,31,0.25);
+  }
+  .keyword-group.neu .kw-chip-count {
+    background: var(--surface-container-lowest);
+    color: var(--warning);
+  }
+
+  /* ===== Profile generated CTA ===== */
+  .profile-cta {
+    margin-top: 32px;
+    padding: 32px;
+    background: var(--primary);
+    color: var(--on-primary);
+    border-radius: var(--r-lg);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 28px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .profile-cta:hover { background: var(--primary-strong); }
+  .profile-cta::before {
+    content: "";
+    position: absolute;
+    right: -50px; top: -50px;
+    width: 200px; height: 200px;
+    border-radius: var(--r-full);
+    background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+    opacity: 0.35;
+  }
+  .cta-icon {
+    width: 64px; height: 64px;
+    border-radius: var(--r-full);
+    background: var(--secondary);
+    color: var(--on-secondary);
+    display: grid; place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    position: relative;
+    z-index: 2;
+  }
+  .cta-content { position: relative; z-index: 2; }
+  .cta-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-tint);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cta-eyebrow::before {
+    content: "✓";
+    width: 18px; height: 18px;
+    background: var(--secondary);
+    color: var(--on-secondary);
+    border-radius: var(--r-full);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .cta-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .cta-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+    max-width: 460px;
+  }
+  .cta-action {
+    position: relative;
+    z-index: 2;
+    padding: 14px 22px;
+    min-height: 48px;
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .cta-action:hover { background: var(--secondary); color: var(--on-secondary); }
+  .cta-action::after { content: "→"; font-size: 17px; }
+
+  /* ============================================================ */
+  /* CUSTOMER PROFILES (catalog)                                   */
+  /* ============================================================ */
+  .catalog-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 24px;
+  }
+  .search-wrap { position: relative; }
+  .search-input {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    min-height: 48px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--on-surface);
+    transition: all 0.15s ease;
+    outline: none;
+  }
+  .search-input::placeholder { color: var(--on-surface-variant); }
+  .search-input:focus {
+    border-color: var(--secondary);
+    border-width: 2px;
+    padding: 13px 15px 13px 43px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 18px;
+    color: var(--on-surface-variant);
+    pointer-events: none;
+  }
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 14px;
+    min-height: 40px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .filter-chip:hover { border-color: var(--primary); }
+  .filter-chip.on {
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
+  }
+
+  .catalog-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .customer-list {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+  .customer-list-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .customer-list-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+  }
+  .customer-list-count {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--on-surface);
+  }
+
+  .customer-item {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    min-height: 60px;
+    border-bottom: 1px solid var(--outline-variant);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    position: relative;
+  }
+  .customer-item:hover { background: var(--surface-container-low); }
+  .customer-item.active { background: var(--primary-tint-soft); }
+  .customer-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--secondary);
+  }
+  .customer-item-avatar {
+    width: 36px; height: 36px;
+    border-radius: var(--r-full);
+    display: grid;
+    place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--on-primary);
+    background: var(--primary);
+  }
+  .ci-name {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 2px;
+    color: var(--on-surface);
+  }
+  .ci-meta {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .live-pill {
+    background: var(--secondary);
+    color: var(--on-secondary);
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .ci-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--secondary);
+    text-align: right;
+  }
+
+  /* Customer profile detail */
+  .profile-hero {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 28px;
+    align-items: center;
+    padding: 28px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    margin-bottom: 24px;
+  }
+  .profile-avatar-lg {
+    width: 96px; height: 96px;
+    border-radius: var(--r-full);
+    background: var(--primary);
+    color: var(--on-primary);
+    display: grid; place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    letter-spacing: -0.02em;
+  }
+  .profile-hero-name {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .profile-hero-sub {
+    font-size: 13.5px;
+    color: var(--on-surface-variant);
+    margin-bottom: 14px;
+  }
+  .profile-hero-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: var(--r-full);
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+  }
+  .tag.primary {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+  .tag.accent {
+    background: var(--secondary-tint-soft);
+    color: var(--secondary-strong);
+  }
+  .tag.strike { text-decoration: line-through; opacity: 0.55; }
+
+  .profile-hero-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: right;
+    padding-left: 28px;
+    border-left: 1px solid var(--outline-variant);
+  }
+  .hero-stat-line {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .hero-stat-line strong {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  .sessions-timeline {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+  }
+
+  .session-entry {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .session-entry:first-child { padding-top: 0; }
+  .session-date {
+    text-align: right;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .session-date .day {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    display: block;
+    text-transform: none;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .session-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .session-title .accent { color: var(--secondary); }
+  .session-meta {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    margin-bottom: 12px;
+  }
+  .session-quote {
+    font-size: 13.5px;
+    color: var(--on-surface-variant);
+    padding: 12px 14px;
+    background: var(--surface-container-low);
+    border-left: 3px solid var(--secondary);
+    margin-bottom: 12px;
+    border-radius: 0 var(--r) var(--r) 0;
+    line-height: 1.5;
+  }
+  .session-thumbs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .session-thumb {
+    width: 56px; height: 56px;
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .session-thumb svg { width: 100%; height: 100%; display: block; }
+  .session-thumb.more {
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    background: var(--surface-container-low);
+  }
+  .session-footer {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    flex-wrap: wrap;
+  }
+  .session-footer span strong {
+    color: var(--on-surface);
+    font-weight: 700;
+    margin-right: 2px;
+  }
+
+  .continuity-panel {
+    padding: 20px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    position: sticky;
+    top: 24px;
+  }
+  .continuity-panel.horizontal {
+    position: static;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .continuity-panel.horizontal .continuity-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .continuity-panel.horizontal .continuity-item {
+    padding: 16px 18px;
+    background: var(--surface-container-lowest);
+    border-bottom: none;
+    border-right: 1px solid var(--outline-variant);
+  }
+  .continuity-panel.horizontal .continuity-item:last-child {
+    border-right: none;
+  }
+  .continuity-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.005em;
+    margin-bottom: 4px;
+  }
+  .continuity-sub {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .continuity-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  .continuity-item:last-child { border-bottom: none; }
+  .continuity-head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    align-items: center;
+  }
+  .continuity-key {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+  .continuity-weight {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--secondary);
+    background: var(--secondary-tint-soft);
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+  }
+  .continuity-desc {
+    font-size: 12.5px;
+    color: var(--on-surface-variant);
+    line-height: 1.5;
+  }
+
+  /* ============================================================ */
+  /* PRODUCT INSIGHTS                                              */
+  /* ============================================================ */
+  .product-hero {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 32px;
+    align-items: start;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--outline-variant);
+    margin-bottom: 28px;
+  }
+  .product-image {
+    aspect-ratio: 4/5;
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    position: relative;
+  }
+  .product-image svg { width: 100%; height: 100%; display: block; }
+  .product-image-label {
+    position: absolute;
+    bottom: 12px; left: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--on-primary);
+    background: rgba(19,27,46,0.85);
+    padding: 5px 10px;
+    border-radius: var(--r-sm);
+  }
+  .product-info { padding-top: 4px; }
+  .product-category {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 12px;
+  }
+  .product-name {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 44px;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    margin-bottom: 8px;
+    color: var(--on-surface);
+  }
+  .product-name .accent { color: var(--secondary); }
+  .product-sku {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    margin-bottom: 24px;
+  }
+
+  .product-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--outline-variant);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .pstat {
+    padding: 18px 20px;
+    background: var(--surface-container-lowest);
+  }
+  .pstat-value {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    color: var(--on-surface);
+  }
+  .pstat-value.pos { color: var(--secondary); }
+  .pstat-value.neg { color: var(--error); }
+  .pstat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+  }
+
+  .sentiment-ribbon {
+    display: flex;
+    height: 12px;
+    border-radius: var(--r-full);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .sr-pos { background: var(--secondary); flex: 62; }
+  .sr-neu { background: var(--warning); flex: 21; }
+  .sr-neg { background: var(--error); flex: 17; }
+  .sentiment-legend {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+  .sentiment-legend strong { color: var(--on-surface); font-weight: 700; }
+
+  .themes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .theme-card {
+    padding: 20px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    position: relative;
+  }
+  .theme-card.pos { border-left: 3px solid var(--secondary); }
+  .theme-card.neg { border-left: 3px solid var(--error); }
+  .theme-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .theme-name {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.005em;
+  }
+  .theme-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    background: var(--surface-container);
+    padding: 3px 8px;
+    border-radius: var(--r-full);
+  }
+  .theme-quotes { display: flex; flex-direction: column; gap: 10px; }
+  .theme-quote {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+    padding: 10px 12px;
+    background: var(--surface-container-low);
+    border-radius: var(--r);
+    border-left: 2px solid var(--outline-variant);
+  }
+  .theme-card.pos .theme-quote { border-left-color: var(--secondary); }
+  .theme-card.neg .theme-quote { border-left-color: var(--error); }
+
+  /* Reaction stream — zebra striping */
+  .comments-stream {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .comment {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--outline-variant);
+    align-items: center;
+  }
+  .comment:last-child { border-bottom: none; }
+  .comment:nth-child(even) { background: var(--surface-container-low); }
+  .comment-avatar {
+    width: 36px; height: 36px;
+    border-radius: var(--r-full);
+    background: var(--primary);
+    color: var(--on-primary);
+    display: grid; place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .comment-body { min-width: 0; }
+  .comment-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .comment-name { font-weight: 600; font-size: 13.5px; }
+  .comment-date { font-size: 11px; color: var(--on-surface-variant); }
+  .comment-sentiment {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: var(--r-sm);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .comment-sentiment.pos { background: var(--secondary-tint-soft); color: var(--secondary-strong); }
+  .comment-sentiment.neg { background: var(--error-tint); color: var(--error); }
+  .comment-sentiment.neu { background: var(--warning-tint); color: var(--warning); }
+  .comment-text {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+  }
+  .comment-outcome {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    text-align: right;
+  }
+  .comment-outcome strong {
+    display: block;
+    color: var(--on-surface);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  /* ============================================================ */
+  /* TOAST                                                         */
+  /* ============================================================ */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--inverse-surface);
+    color: var(--inverse-on-surface);
+    padding: 14px 22px;
+    min-height: 48px;
+    border-radius: var(--r);
+    font-size: 13.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-active);
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast-glow {
+    width: 10px; height: 10px;
+    border-radius: var(--r-full);
+    background: var(--secondary);
+    box-shadow: 0 0 0 0 var(--secondary);
+    animation: toastGlow 1s ease-out infinite;
+  }
+  @keyframes toastGlow {
+    0% { box-shadow: 0 0 0 0 rgba(0,106,97,0.6); }
+    100% { box-shadow: 0 0 0 12px rgba(0,106,97,0); }
+  }
+
+  /* ============================================================ */
+  /* RESPONSIVE                                                    */
+  /* ============================================================ */
+  @media (max-width: 1280px) {
+    .live-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .sessions-timeline { grid-template-columns: 1fr; }
+    .product-hero { grid-template-columns: 1fr; }
+    .catalog-layout { grid-template-columns: 1fr; }
+    .customer-list { position: static; max-height: 480px; }
+    .continuity-panel { position: static; }
+    .continuity-panel.horizontal .continuity-grid { grid-template-columns: 1fr; }
+    .continuity-panel.horizontal .continuity-item { border-right: none; border-bottom: 1px solid var(--outline-variant); }
+    .continuity-panel.horizontal .continuity-item:last-child { border-bottom: none; }
+    .profile-cta { grid-template-columns: 1fr; gap: 20px; padding: 28px; }
+    .cta-action { justify-self: start; }
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 72px 1fr; }
+    .brand-name, .brand-sub, .nav-item span:not(.nav-badge), .nav-section-label, .user-info { display: none; }
+    .nav-item { justify-content: center; padding: 12px; }
+    .brand { justify-content: center; padding: 8px 0 24px; }
+    .user-card { justify-content: center; }
+    .main { padding: 24px; }
+    .page-header { grid-template-columns: 1fr; }
+    .page-meta { text-align: left; }
+    .page-title { font-size: 28px; line-height: 36px; }
+    .hero-persona { font-size: 36px; }
+    .hero-facts { grid-template-columns: repeat(2, 1fr); }
+    .product-stats { grid-template-columns: repeat(2, 1fr); }
+    .flag-grid { grid-template-columns: 1fr; }
+    .themes-grid { grid-template-columns: 1fr; }
+    .match-grid { grid-template-columns: 1fr 1fr; }
+    .note-body { grid-template-columns: 1fr; }
+    .capture { aspect-ratio: 16/10; }
+    .profile-hero { grid-template-columns: 1fr; text-align: left; }
+    .profile-hero-stats { padding-left: 0; border-left: none; padding-top: 16px; border-top: 1px solid var(--outline-variant); align-items: flex-start; text-align: left; }
+    .hero-stat-line { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <a class="brand" href="#">
+    <div class="brand-logo">P</div>
+    <div>
+      <div class="brand-name">PinPoint</div>
+      <div class="brand-sub">Berlin Mitte</div>
+    </div>
+  </a>
+
+  <div class="nav-section-label">Workspace</div>
+
+  <button class="nav-item active" data-view="live">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    </svg>
+    <span>Showroom Floor</span>
+    <span class="nav-badge">2</span>
+  </button>
+
+  <button class="nav-item" data-view="profile">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <span>Customer Profiles</span>
+  </button>
+
+  <button class="nav-item" data-view="product">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    <span>Product Insights</span>
+  </button>
+
+  <div class="nav-section-label">System</div>
+
+  <button class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    <span>Settings</span>
+  </button>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">LV</div>
+      <div class="user-info">
+        <div class="user-name">Lena Vogt</div>
+        <div class="user-role">Senior Consultant</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+
+<!-- ====================================================== -->
+<!-- VIEW 1: SHOWROOM FLOOR (Live + Summary)                 -->
+<!-- ====================================================== -->
+<section class="view active" id="view-live">
+
+  <div class="page-header">
+    <div>
+      <div class="eyebrow" id="liveEyebrow"><span class="eyebrow-dot"></span>Session in progress · 00:18:42</div>
+      <h1 class="page-title" id="liveTitle">Sylvan Marchetti is browsing</h1>
+    </div>
+    <div class="page-meta" id="liveMeta">
+      <strong>Kitchen Floor · Ground</strong>
+      Started 14:22 · 7 notes · 3 external refs<br>
+      Device PP-07 · Signal nominal
+    </div>
+  </div>
+
+  <!-- Toggle bar -->
+  <div class="session-toggle-bar">
+    <div class="session-toggle">
+      <button class="seg on live-mode" data-mode="live">
+        <span class="seg-dot"></span>
+        Live
+      </button>
+      <button class="seg disabled" data-mode="summary" id="summarySeg">
+        <span class="seg-dot"></span>
+        Session Summary
+      </button>
+    </div>
+    <div class="toggle-meta">
+      <span><strong>Sylvan Marchetti</strong> · Session 03</span>
+      <span id="sessionStatusMeta">Active · 00:18:42</span>
+    </div>
+    <button class="end-session-btn" id="endSessionBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      End session
+    </button>
+  </div>
+
+  <!-- ===== SUB-MODE: LIVE ===== -->
+  <div class="session-mode active" id="mode-live">
+
+    <div class="live-grid">
+
+      <!-- LEFT COLUMN: NOTE FEED -->
+      <div>
+        <div class="feed-head">
+          <div class="feed-title">Spatial briefs as they land</div>
+          <div class="feed-controls">
+            <button class="chip on">All</button>
+            <button class="chip">Liked</button>
+            <button class="chip">Concerns</button>
           </div>
         </div>
-      </article>
-    </template>
 
-    <script type="module" src="./app.js"></script>
-  </body>
+        <div class="note-feed">
+
+          <!-- NOTE 1 -->
+          <article class="note new">
+            <div class="note-head">
+              <span class="note-index">№ 07</span>
+              <span class="sentiment-dot neu"></span>
+              <span>Just pinned</span>
+              <span class="note-time">14:41 · 2 sec ago</span>
+            </div>
+            <div class="note-body">
+              <div class="capture">
+                <svg class="capture-svg" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="wood1" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="#c9a577"/>
+                      <stop offset="1" stop-color="#8a6a44"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="160" height="200" fill="#2a2520"/>
+                  <rect x="10" y="20" width="140" height="70" fill="url(#wood1)" rx="2"/>
+                  <rect x="10" y="94" width="140" height="70" fill="url(#wood1)" rx="2"/>
+                  <line x1="80" y1="20" x2="80" y2="90" stroke="#6a4a2c" stroke-width="0.6"/>
+                  <line x1="80" y1="94" x2="80" y2="164" stroke="#6a4a2c" stroke-width="0.6"/>
+                  <rect x="10" y="88" width="140" height="4" fill="#1a1510"/>
+                  <rect x="10" y="168" width="140" height="4" fill="#1a1510"/>
+                </svg>
+                <span class="capture-badge">Spatial</span>
+              </div>
+              <div class="note-content">
+                <div class="note-product">Kitchen A · Nobilia Senso · Smoked oak</div>
+                <div class="note-headline">The handle detail is beautiful.</div>
+                <div class="note-transcript">"I love how this one has no handles at all, it looks so clean. But I'm worried about fingerprints, how does this actually hold up with two kids at home?"</div>
+                <div class="note-actions">
+                  <button class="btn btn-secondary" onclick="toggleMatches(this)">See 3 matches</button>
+                  <button class="btn btn-text">Mark reviewed</button>
+                </div>
+              </div>
+            </div>
+            <div class="matches">
+              <div class="matches-title">Catalog matches · ranked by fit</div>
+              <div class="match-grid">
+                <div class="match" onclick="spawnAR(this, 'Senso Matte Oak')">
+                  <div class="match-img">
+                    <span class="match-confidence">94%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#8a6a44"/><rect x="8" y="10" width="48" height="70" fill="#a8825a" rx="1"/><rect x="64" y="10" width="48" height="70" fill="#a8825a" rx="1"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Senso Matte · Oak veneer</div>
+                    <div class="match-meta">SKU N-S-204 · €11,400</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+                <div class="match" onclick="spawnAR(this, 'Flair Oak Anti-Fingerprint')">
+                  <div class="match-img">
+                    <span class="match-confidence">88%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#a8825a"/><rect x="8" y="10" width="48" height="70" fill="#c9a577" rx="1"/><rect x="64" y="10" width="48" height="70" fill="#c9a577" rx="1"/><circle cx="110" cy="16" r="3" fill="#006a61"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Flair Oak · Anti-fingerprint</div>
+                    <div class="match-meta">SKU N-F-112 · €9,850</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+                <div class="match" onclick="spawnAR(this, 'Touch Linen')">
+                  <div class="match-img">
+                    <span class="match-confidence">76%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#c2b8a4"/><rect x="8" y="10" width="48" height="70" fill="#d9d0bc" rx="1"/><rect x="64" y="10" width="48" height="70" fill="#d9d0bc" rx="1"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Touch · Linen white</div>
+                    <div class="match-meta">SKU N-T-098 · €10,200</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- NOTE 2 -->
+          <article class="note">
+            <div class="note-head">
+              <span class="note-index">№ 06</span>
+              <span class="sentiment-dot pos"></span>
+              <span>Positive reaction</span>
+              <span class="note-time">14:38 · 3m ago</span>
+            </div>
+            <div class="note-body">
+              <div class="capture">
+                <svg class="capture-svg" viewBox="0 0 160 200">
+                  <rect width="160" height="200" fill="#d6cbb2"/>
+                  <rect x="20" y="40" width="120" height="130" fill="#3a3530"/>
+                  <rect x="26" y="46" width="108" height="56" fill="#4a423a"/>
+                  <rect x="26" y="106" width="108" height="58" fill="#4a423a"/>
+                  <rect x="70" y="102" width="20" height="2" fill="#006a61"/>
+                </svg>
+                <span class="capture-badge">Spatial</span>
+              </div>
+              <div class="note-content">
+                <div class="note-product">Kitchen A · Leicht Topos · Graphite</div>
+                <div class="note-headline">This dark island feels grounded.</div>
+                <div class="note-transcript">"The contrast here is exactly what I want. Dark below, something lighter above. It feels warm even though it's dark, you know what I mean?"</div>
+                <div class="note-actions">
+                  <button class="btn btn-secondary" onclick="toggleMatches(this)">See 4 matches</button>
+                </div>
+              </div>
+            </div>
+            <div class="matches">
+              <div class="matches-title">Catalog matches · ranked by fit</div>
+              <div class="match-grid">
+                <div class="match" onclick="spawnAR(this, 'Topos Graphite Island')">
+                  <div class="match-img">
+                    <span class="match-confidence">91%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#d6cbb2"/><rect x="12" y="40" width="96" height="40" fill="#3a3530"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Topos · Graphite island</div>
+                    <div class="match-meta">SKU L-TP-051 · €14,200</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+                <div class="match" onclick="spawnAR(this, 'Concept Slate Dual')">
+                  <div class="match-img">
+                    <span class="match-confidence">83%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#e0d8c5"/><rect x="12" y="14" width="96" height="30" fill="#c9a577"/><rect x="12" y="48" width="96" height="32" fill="#3a3530"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Concept · Slate dual-tone</div>
+                    <div class="match-meta">SKU L-CN-118 · €12,600</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+                <div class="match" onclick="spawnAR(this, 'Carré Dark Oak')">
+                  <div class="match-img">
+                    <span class="match-confidence">79%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#a8825a"/><rect x="12" y="18" width="96" height="54" fill="#5a4838"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Carré · Dark oak</div>
+                    <div class="match-meta">SKU L-CR-203 · €13,100</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- NOTE 3 -->
+          <article class="note">
+            <div class="note-head">
+              <span class="note-index">№ 05</span>
+              <span class="sentiment-dot neu"></span>
+              <span>External reference · Pinterest crop</span>
+              <span class="note-time">14:33 · 8m ago</span>
+            </div>
+            <div class="note-body">
+              <div class="capture">
+                <svg class="capture-svg" viewBox="0 0 160 200">
+                  <rect width="160" height="200" fill="#ebe5d8"/>
+                  <rect x="12" y="12" width="136" height="176" fill="#f4f0e8" stroke="#c9bfa8" stroke-width="1"/>
+                  <rect x="22" y="30" width="116" height="80" fill="#c9a577"/>
+                  <rect x="22" y="116" width="70" height="60" fill="#ebe5d8"/>
+                  <rect x="98" y="116" width="40" height="60" fill="#006a61"/>
+                </svg>
+                <span class="capture-badge">External</span>
+              </div>
+              <div class="note-content">
+                <div class="note-product">Reference image · cropped on device</div>
+                <div class="note-headline">"This is the feeling I want."</div>
+                <div class="note-transcript">"I saved this one last week. I love the sage green pantry next to the wood. Is there anything close to this in your catalog?"</div>
+                <div class="note-actions">
+                  <button class="btn btn-secondary" onclick="toggleMatches(this)">See 2 matches</button>
+                </div>
+              </div>
+            </div>
+            <div class="matches">
+              <div class="matches-title">Catalog matches · ranked by fit</div>
+              <div class="match-grid">
+                <div class="match" onclick="spawnAR(this, 'Chroma Sage Pantry')">
+                  <div class="match-img">
+                    <span class="match-confidence">87%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#e0d8c5"/><rect x="10" y="18" width="64" height="54" fill="#c9a577"/><rect x="78" y="18" width="30" height="54" fill="#006a61"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Chroma · Sage pantry module</div>
+                    <div class="match-meta">SKU N-CH-309 · €4,400</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+                <div class="match" onclick="spawnAR(this, 'Colore Olive')">
+                  <div class="match-img">
+                    <span class="match-confidence">72%</span>
+                    <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#d6cbb2"/><rect x="14" y="22" width="90" height="48" fill="#8a9070"/></svg>
+                  </div>
+                  <div class="match-info">
+                    <div class="match-name">Colore · Olive matte</div>
+                    <div class="match-meta">SKU L-CO-440 · €8,900</div>
+                  </div>
+                  <button class="match-spawn">Spawn in AR</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- NOTE 4 -->
+          <article class="note">
+            <div class="note-head">
+              <span class="note-index">№ 04</span>
+              <span class="sentiment-dot neg"></span>
+              <span>Rejected</span>
+              <span class="note-time">14:28 · 13m ago</span>
+            </div>
+            <div class="note-body">
+              <div class="capture">
+                <svg class="capture-svg" viewBox="0 0 160 200">
+                  <rect width="160" height="200" fill="#ebe5d8"/>
+                  <rect x="20" y="40" width="120" height="130" fill="#f4f0e8" stroke="#d9d0bc"/>
+                  <rect x="30" y="50" width="100" height="50" fill="#fafafa"/>
+                  <rect x="30" y="108" width="100" height="52" fill="#fafafa"/>
+                  <circle cx="125" cy="58" r="2" fill="#1a1815"/>
+                </svg>
+                <span class="capture-badge">Spatial</span>
+              </div>
+              <div class="note-content">
+                <div class="note-product">Kitchen A · Nobilia Laser Soft · High gloss white</div>
+                <div class="note-headline">Too clinical for us.</div>
+                <div class="note-transcript">"This is exactly what I don't want. It's cold. It looks like a hospital. My husband would say it's modern but I think it has no soul."</div>
+                <div class="note-actions">
+                  <button class="btn btn-text">Add to avoid-list</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: MAP + APPROACH -->
+      <div>
+        <section class="card" style="margin-bottom: 16px;">
+          <div class="card-head">
+            <span class="card-title">Spatial map</span>
+            <span class="card-tag live">Live</span>
+          </div>
+          <div class="map-wrap">
+            <div class="map-surface">
+              <div class="room" style="top:8%; left:6%; width:88%; height:40%"></div>
+              <span class="room-label" style="top:10%; left:8%">Kitchen A</span>
+              <div class="room" style="top:54%; left:6%; width:88%; height:38%"></div>
+              <span class="room-label" style="top:56%; left:8%">Living · Dining</span>
+
+              <div class="pin positive" style="top:22%; left:18%"><div class="pin-dot"></div></div>
+              <div class="pin positive" style="top:30%; left:34%"><div class="pin-dot"></div></div>
+              <div class="pin negative" style="top:25%; left:54%"><div class="pin-dot"></div></div>
+              <div class="pin positive" style="top:32%; left:74%"><div class="pin-dot"></div></div>
+              <div class="pin neutral" style="top:70%; left:28%"><div class="pin-dot"></div></div>
+              <div class="pin active neutral" style="top:72%; left:62%"><div class="pin-dot"></div></div>
+
+              <div class="customer-marker" style="top:72%; left:62%"></div>
+            </div>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--secondary)"></span>Liked</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--error)"></span>Concern</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--warning)"></span>Neutral</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--primary)"></span>Customer</span>
+          </div>
+        </section>
+
+        <section class="readiness">
+          <div class="readiness-eyebrow">Approach signal</div>
+          <div class="readiness-score">78<sup>%</sup></div>
+          <div class="readiness-label">Sylvan is showing strong engagement. Optimal window to approach opens in ~2 min.</div>
+          <div class="readiness-bar"><div class="readiness-bar-fill"></div></div>
+          <button class="approach-btn">I'm approaching now</button>
+        </section>
+
+        <section class="opener-card">
+          <div class="opener-label">AI-drafted opener</div>
+          <div class="opener-text">"Hi Sylvan, I noticed you were drawn to <strong>the Nobilia Senso line</strong> and had some questions about <strong>how it holds up day-to-day</strong>. Let me show you two alternatives that address that."</div>
+        </section>
+
+        <section class="signal-card">
+          <div class="signal-label">Unresolved concerns · 2</div>
+          <div class="concern-list">
+            <div class="concern-item">
+              <strong>Fingerprint / maintenance</strong>
+              <span>Raised 2× · Nobilia Senso</span>
+            </div>
+            <div class="concern-item">
+              <strong>Color temperature</strong>
+              <span>Rejected cold whites</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </div><!-- /mode-live -->
+
+  <!-- ===== SUB-MODE: SUMMARY ===== -->
+  <div class="session-mode" id="mode-summary">
+
+    <!-- Summary action bar -->
+    <div class="summary-actions">
+      <div class="summary-actions-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>Profile generated · <strong>ready to share</strong></span>
+      </div>
+      <button class="btn btn-outline" id="exportPdfBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export PDF
+      </button>
+      <button class="btn btn-secondary" id="sendRecapBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send recap to customer
+      </button>
+    </div>
+
+    <div class="summary-grid">
+      <div>
+        <div class="summary-hero">
+          <div class="hero-eyebrow">Customer persona · AI-composed</div>
+          <div class="hero-persona">The <span class="accent">warm modernist.</span></div>
+          <p class="hero-tagline">Sylvan is aesthetically decisive but practically hesitant. She knows the look she wants (handle-less, warm oak, contrast islands) but needs reassurance on upkeep. Price signal is firmly mid-range. She buys on texture and daily ease, not brand.</p>
+          <div class="hero-facts">
+            <div>
+              <div class="fact-value">12</div>
+              <div class="fact-label">Spatial briefs</div>
+            </div>
+            <div>
+              <div class="fact-value">46m</div>
+              <div class="fact-label">Time on floor</div>
+            </div>
+            <div>
+              <div class="fact-value"><span class="accent">€11k</span></div>
+              <div class="fact-label">Midpoint signal</div>
+            </div>
+            <div>
+              <div class="fact-value">78<span style="font-size: 18px; opacity: 0.6;">%</span></div>
+              <div class="fact-label">Intent score</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keywords extracted -->
+        <div class="keywords-section">
+          <div class="keywords-head">
+            <div class="keywords-title">Keywords extracted across 12 briefs</div>
+          </div>
+          <div class="keywords-sub">AI-extracted preference signals, grouped by sentiment. Mention counts shown per keyword.</div>
+
+          <div class="keyword-group pos">
+            <div class="keyword-group-label">
+              <span class="group-dot"></span>
+              Positive signals
+              <span class="keyword-group-count">8 keywords · 24 mentions</span>
+            </div>
+            <div class="keyword-chips">
+              <span class="kw-chip">handle-less<span class="kw-chip-count">5</span></span>
+              <span class="kw-chip">warm oak<span class="kw-chip-count">4</span></span>
+              <span class="kw-chip">smoked finish<span class="kw-chip-count">3</span></span>
+              <span class="kw-chip">dark contrast island<span class="kw-chip-count">3</span></span>
+              <span class="kw-chip">sage accent<span class="kw-chip-count">2</span></span>
+              <span class="kw-chip">clean / minimal<span class="kw-chip-count">3</span></span>
+              <span class="kw-chip">matte texture<span class="kw-chip-count">2</span></span>
+              <span class="kw-chip">wood + color combo<span class="kw-chip-count">2</span></span>
+            </div>
+          </div>
+
+          <div class="keyword-group neg">
+            <div class="keyword-group-label">
+              <span class="group-dot"></span>
+              Concerns &amp; rejections
+              <span class="keyword-group-count">5 keywords · 9 mentions</span>
+            </div>
+            <div class="keyword-chips">
+              <span class="kw-chip">fingerprint / maintenance<span class="kw-chip-count">3</span></span>
+              <span class="kw-chip">gloss white<span class="kw-chip-count">2</span></span>
+              <span class="kw-chip">clinical / cold<span class="kw-chip-count">2</span></span>
+              <span class="kw-chip">visible hardware<span class="kw-chip-count">1</span></span>
+              <span class="kw-chip">price ceiling<span class="kw-chip-count">1</span></span>
+            </div>
+          </div>
+
+          <div class="keyword-group neu">
+            <div class="keyword-group-label">
+              <span class="group-dot"></span>
+              Context &amp; constraints
+              <span class="keyword-group-count">4 keywords · 7 mentions</span>
+            </div>
+            <div class="keyword-chips">
+              <span class="kw-chip">family with kids<span class="kw-chip-count">3</span></span>
+              <span class="kw-chip">mid-range budget<span class="kw-chip-count">2</span></span>
+              <span class="kw-chip">north-facing room<span class="kw-chip-count">1</span></span>
+              <span class="kw-chip">husband to consult<span class="kw-chip-count">1</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-head">
+          <div class="section-title">Flagged products · positive and negative</div>
+          <div class="section-count">6 of 12</div>
+        </div>
+
+        <div class="flag-grid">
+          <div class="flag-card pos">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#8a6a44"/><rect x="10" y="14" width="48" height="62" fill="#a8825a" rx="1"/><rect x="62" y="14" width="48" height="62" fill="#a8825a" rx="1"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Nobilia Senso</div>
+              <div class="flag-sku">SKU N-S-204 · Smoked oak</div>
+              <div class="flag-quote">"The handle detail is beautiful. I love how it has no handles at all."</div>
+            </div>
+          </div>
+          <div class="flag-card pos">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#d6cbb2"/><rect x="12" y="36" width="96" height="40" fill="#3a3530"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Leicht Topos</div>
+              <div class="flag-sku">SKU L-TP-051 · Graphite island</div>
+              <div class="flag-quote">"Dark below, something lighter above. It feels warm even though it's dark."</div>
+            </div>
+          </div>
+          <div class="flag-card neg">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#f4f0e8"/><rect x="12" y="14" width="46" height="62" fill="#fafafa"/><rect x="62" y="14" width="46" height="62" fill="#fafafa"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Nobilia Laser Soft</div>
+              <div class="flag-sku">SKU N-LS-077 · Gloss white</div>
+              <div class="flag-quote">"It's cold. It looks like a hospital. It has no soul."</div>
+            </div>
+          </div>
+          <div class="flag-card pos">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#e0d8c5"/><rect x="10" y="18" width="64" height="54" fill="#c9a577"/><rect x="78" y="18" width="30" height="54" fill="#006a61"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Chroma Sage</div>
+              <div class="flag-sku">SKU N-CH-309 · Sage pantry</div>
+              <div class="flag-quote">"The sage next to the wood is exactly the feeling I want."</div>
+            </div>
+          </div>
+          <div class="flag-card neu">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#c2b8a4"/><rect x="12" y="14" width="96" height="62" fill="#d9d0bc" rx="1"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Nobilia Touch</div>
+              <div class="flag-sku">SKU N-T-098 · Linen white</div>
+              <div class="flag-quote">"It's nice but a bit safe. I'd want more warmth somewhere."</div>
+            </div>
+          </div>
+          <div class="flag-card neg">
+            <div class="flag-img">
+              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#a8825a"/><rect x="10" y="16" width="100" height="58" fill="#c9a577"/><circle cx="30" cy="30" r="2.5" fill="#131b2e"/><circle cx="90" cy="30" r="2.5" fill="#131b2e"/></svg>
+            </div>
+            <div class="flag-body">
+              <div class="flag-name">Häcker Classic</div>
+              <div class="flag-sku">SKU H-CL-012 · Traditional</div>
+              <div class="flag-quote">"Handles look dated. Too much hardware showing."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title">Preference weights</span>
+            <span class="card-tag">AI</span>
+          </div>
+          <div class="panel">
+            <div class="pref-row">
+              <div class="pref-label">Warm tones</div>
+              <div class="pref-bar"><div class="pref-bar-fill" style="width: 92%"></div></div>
+              <div class="pref-val">0.92</div>
+            </div>
+            <div class="pref-row">
+              <div class="pref-label">Handle-less</div>
+              <div class="pref-bar"><div class="pref-bar-fill" style="width: 88%"></div></div>
+              <div class="pref-val">0.88</div>
+            </div>
+            <div class="pref-row">
+              <div class="pref-label">Oak / wood</div>
+              <div class="pref-bar"><div class="pref-bar-fill" style="width: 81%"></div></div>
+              <div class="pref-val">0.81</div>
+            </div>
+            <div class="pref-row">
+              <div class="pref-label">Dark contrast</div>
+              <div class="pref-bar"><div class="pref-bar-fill" style="width: 68%"></div></div>
+              <div class="pref-val">0.68</div>
+            </div>
+            <div class="pref-row">
+              <div class="pref-label">Color accents</div>
+              <div class="pref-bar"><div class="pref-bar-fill" style="width: 54%"></div></div>
+              <div class="pref-val">0.54</div>
+            </div>
+            <div class="pref-row">
+              <div class="pref-label">Gloss finish</div>
+              <div class="pref-bar"><div class="pref-bar-fill warn" style="width: 8%"></div></div>
+              <div class="pref-val">0.08</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top: 16px;">
+          <div class="panel">
+            <div class="budget-title">Budget signal</div>
+            <div class="budget-range"><span class="accent">€10k</span> — <span class="accent">€14k</span></div>
+            <div class="budget-signal">Inferred from positively flagged SKUs. She commented on maintenance cost twice, which suggests total-cost sensitivity rather than list-price only.</div>
+          </div>
+        </section>
+
+        <section class="card" style="margin-top: 16px;">
+          <div class="card-head">
+            <span class="card-title">Session timeline</span>
+            <span class="card-tag">12 events</span>
+          </div>
+          <div class="panel">
+            <div class="timeline-item">
+              <div class="timeline-time">14:22</div>
+              <div class="timeline-event"><strong>Entered floor</strong> · device paired</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">14:26</div>
+              <div class="timeline-event">Pin №1 · Kitchen A · positive</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">14:33</div>
+              <div class="timeline-event">External ref imported · Pinterest</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">14:41</div>
+              <div class="timeline-event">Pin №7 · Kitchen A · <strong>concern</strong></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">14:43</div>
+              <div class="timeline-event"><strong>Approached by Lena V.</strong> · AR spawn ×4</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">15:08</div>
+              <div class="timeline-event"><strong>Session ended</strong> · brochure emailed</div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- CTA -->
+    <div class="profile-cta" id="profileCta">
+      <div class="cta-icon">SM</div>
+      <div class="cta-content">
+        <div class="cta-eyebrow">Customer profile generated</div>
+        <div class="cta-title">Sylvan's profile is ready to review.</div>
+        <div class="cta-sub">12 spatial briefs from this visit are now folded into her lifetime profile across 3 sessions. Continuity signals updated.</div>
+      </div>
+      <button class="cta-action" id="ctaToProfile">Open Customer Profile</button>
+    </div>
+
+  </div><!-- /mode-summary -->
+
+</section><!-- /view-live -->
+
+<!-- ====================================================== -->
+<!-- VIEW 2: CUSTOMER PROFILES                               -->
+<!-- ====================================================== -->
+<section class="view" id="view-profile">
+
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Customer profiles · 247 in catalog</div>
+      <h1 class="page-title">Who's been through the door</h1>
+    </div>
+    <div class="page-meta">
+      <strong>1 active now</strong>
+      14 sessions this week<br>
+      89 returning customers
+    </div>
+  </div>
+
+  <div class="catalog-toolbar">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="search-input" id="customerSearch" placeholder="Search by name, tag, product, or session date…" />
+    </div>
+    <div class="filter-chips">
+      <button class="filter-chip on">All</button>
+    </div>
+  </div>
+
+  <div class="catalog-layout">
+    <aside class="customer-list" id="customerList">
+      <div class="customer-list-head">
+        <span class="customer-list-title">Customers</span>
+        <span class="customer-list-count">5 of 247</span>
+      </div>
+
+      <div class="customer-item active" data-customer="sylvan">
+        <div class="customer-item-avatar">SM</div>
+        <div>
+          <div class="ci-name">Sylvan Marchetti</div>
+          <div class="ci-meta"><span class="live-pill">LIVE</span>Session 03 · today</div>
+        </div>
+        <div class="ci-tag">warm modern</div>
+      </div>
+
+      <div class="customer-item" data-customer="jonas">
+        <div class="customer-item-avatar">JH</div>
+        <div>
+          <div class="ci-name">Jonas Hartmann</div>
+          <div class="ci-meta">3 sessions · 22 Apr</div>
+        </div>
+        <div class="ci-tag">scandi minimal</div>
+      </div>
+
+      <div class="customer-item" data-customer="sofia">
+        <div class="customer-item-avatar">SK</div>
+        <div>
+          <div class="ci-name">Sofia Kovač</div>
+          <div class="ci-meta">2 sessions · 21 Apr</div>
+        </div>
+        <div class="ci-tag">budget-led</div>
+      </div>
+
+      <div class="customer-item" data-customer="markus">
+        <div class="customer-item-avatar">MR</div>
+        <div>
+          <div class="ci-name">Markus Richter</div>
+          <div class="ci-meta">4 sessions · converted</div>
+        </div>
+        <div class="ci-tag">deposit placed</div>
+      </div>
+
+      <div class="customer-item" data-customer="anna">
+        <div class="customer-item-avatar">AB</div>
+        <div>
+          <div class="ci-name">Anna Brandt</div>
+          <div class="ci-meta">1 session · 16 Apr</div>
+        </div>
+        <div class="ci-tag">north-facing</div>
+      </div>
+    </aside>
+
+    <div>
+      <div class="profile-hero">
+        <div class="profile-avatar-lg">SM</div>
+        <div>
+          <div class="profile-hero-name">Sylvan Marchetti</div>
+          <div class="profile-hero-sub">sylvan.m@example.com · Berlin Charlottenburg · Added Dec 2025</div>
+          <div class="profile-hero-tags">
+            <span class="tag primary">Warm modernist</span>
+            <span class="tag primary">Handle-less</span>
+            <span class="tag">Oak tones</span>
+            <span class="tag accent">Mid-range</span>
+            <span class="tag strike">Glossy finishes</span>
+          </div>
+        </div>
+        <div class="profile-hero-stats">
+          <div class="hero-stat-line"><strong>3</strong>Sessions</div>
+          <div class="hero-stat-line"><strong>31</strong>Spatial briefs</div>
+          <div class="hero-stat-line"><strong>8</strong>AR spawns</div>
+          <div class="hero-stat-line"><strong>Lena V.</strong>Assigned</div>
+        </div>
+      </div>
+
+      <!-- Continuity signals · full-width strip under profile hero -->
+      <div class="continuity-panel horizontal">
+        <div class="continuity-title">Continuity signals</div>
+        <div class="continuity-sub">What has persisted across sessions</div>
+
+        <div class="continuity-grid">
+          <div class="continuity-item">
+            <div class="continuity-head">
+              <div class="continuity-key">Handle-less preference</div>
+              <div class="continuity-weight">3 / 3</div>
+            </div>
+            <div class="continuity-desc">Mentioned positively in every session. Strongest aesthetic anchor.</div>
+          </div>
+          <div class="continuity-item">
+            <div class="continuity-head">
+              <div class="continuity-key">Oak / wood warmth</div>
+              <div class="continuity-weight">3 / 3</div>
+            </div>
+            <div class="continuity-desc">Consistent gravitation to oak veneer across visits. Smoked oak on latest.</div>
+          </div>
+          <div class="continuity-item">
+            <div class="continuity-head">
+              <div class="continuity-key">Maintenance concern</div>
+              <div class="continuity-weight">3 / 3</div>
+            </div>
+            <div class="continuity-desc">Raised each visit. Two children at home. Needs reassurance, not more options.</div>
+          </div>
+          <div class="continuity-item">
+            <div class="continuity-head">
+              <div class="continuity-key">Dark contrast island</div>
+              <div class="continuity-weight">2 / 3</div>
+            </div>
+            <div class="continuity-desc">Emerged in session 02, confirmed in session 03. Probable now.</div>
+          </div>
+          <div class="continuity-item">
+            <div class="continuity-head">
+              <div class="continuity-key">Gloss white · avoid</div>
+              <div class="continuity-weight">2 / 3</div>
+            </div>
+            <div class="continuity-desc">Consistently rejected. Don't show again unless she asks.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-title">Session history</div>
+        <div class="section-count">3 sessions · 4 months</div>
+      </div>
+
+      <div class="session-list">
+          <article class="session-entry">
+            <div class="session-date">
+              <span class="day">23</span>
+              Apr 2026<br>14:22
+            </div>
+            <div>
+              <div class="session-title">Warm modern, <span class="accent">decision window.</span></div>
+              <div class="session-meta">Session 03 · 46 min · Lena V. · Kitchen floor</div>
+              <div class="session-quote">"I think we're close. I want to come back with my husband but I already know what I want."</div>
+              <div class="session-thumbs">
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#a8825a"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#3a3530"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#c9a577"/><rect x="40" y="8" width="16" height="44" fill="#006a61"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#f4f0e8"/><rect x="6" y="6" width="48" height="48" fill="#fafafa"/></svg></div>
+                <div class="session-thumb more">+8</div>
+              </div>
+              <div class="session-footer">
+                <span><strong>12</strong> briefs</span>
+                <span><strong>7</strong> positive</span>
+                <span><strong>3</strong> concerns</span>
+                <span><strong>4</strong> AR spawns</span>
+                <span><strong>€11k</strong> midpoint</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="session-entry">
+            <div class="session-date">
+              <span class="day">08</span>
+              Mar 2026<br>11:05
+            </div>
+            <div>
+              <div class="session-title">Exploratory, <span class="accent">materials-first.</span></div>
+              <div class="session-meta">Session 02 · 38 min · David K. · Kitchen + dining</div>
+              <div class="session-quote">"I need to touch things. Photos don't show how something actually feels."</div>
+              <div class="session-thumbs">
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#a8825a"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#d6cbb2"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#8a6a44"/></svg></div>
+                <div class="session-thumb more">+8</div>
+              </div>
+              <div class="session-footer">
+                <span><strong>11</strong> briefs</span>
+                <span><strong>5</strong> positive</span>
+                <span><strong>4</strong> concerns</span>
+                <span><strong>2</strong> AR spawns</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="session-entry">
+            <div class="session-date">
+              <span class="day">14</span>
+              Dec 2025<br>16:40
+            </div>
+            <div>
+              <div class="session-title">First visit · <span class="accent">window-shopping.</span></div>
+              <div class="session-meta">Session 01 · 24 min · Walk-in</div>
+              <div class="session-quote">"I'm just looking today. I wanted to see what's out there."</div>
+              <div class="session-thumbs">
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#ebe5d8"/></svg></div>
+                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#c9a577"/></svg></div>
+                <div class="session-thumb more">+6</div>
+              </div>
+              <div class="session-footer">
+                <span><strong>8</strong> briefs</span>
+                <span><strong>4</strong> positive</span>
+                <span><strong>1</strong> concern</span>
+                <span><strong>2</strong> AR spawns</span>
+              </div>
+            </div>
+          </article>
+      </div><!-- /session-list -->
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- VIEW 3: PRODUCT INSIGHTS                                -->
+<!-- ====================================================== -->
+<section class="view" id="view-product">
+
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Product intelligence · last 90 days</div>
+      <h1 class="page-title">What the showroom is saying</h1>
+    </div>
+    <div class="page-meta">
+      <strong>Aggregated reactions</strong>
+      1 of 247 products<br>
+      Updated 4 min ago
+    </div>
+  </div>
+
+  <div class="product-hero">
+    <div class="product-image">
+      <svg viewBox="0 0 160 200">
+        <defs>
+          <linearGradient id="heroWood" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#c9a577"/>
+            <stop offset="1" stop-color="#8a6a44"/>
+          </linearGradient>
+        </defs>
+        <rect width="160" height="200" fill="#2a2520"/>
+        <rect x="8" y="16" width="144" height="80" fill="url(#heroWood)" rx="2"/>
+        <rect x="8" y="100" width="144" height="80" fill="url(#heroWood)" rx="2"/>
+        <line x1="80" y1="16" x2="80" y2="96" stroke="#6a4a2c" stroke-width="0.6"/>
+        <line x1="80" y1="100" x2="80" y2="180" stroke="#6a4a2c" stroke-width="0.6"/>
+        <rect x="8" y="94" width="144" height="6" fill="#1a1510"/>
+        <rect x="8" y="180" width="144" height="6" fill="#1a1510"/>
+      </svg>
+      <span class="product-image-label">Nobilia · Showroom B</span>
+    </div>
+
+    <div class="product-info">
+      <div class="product-category">Kitchens · handle-less line</div>
+      <h2 class="product-name">Nobilia <span class="accent">Senso.</span></h2>
+      <div class="product-sku">SKU N-S-204 · Smoked oak · €11,400 base</div>
+
+      <div class="product-stats">
+        <div class="pstat">
+          <div class="pstat-value">34</div>
+          <div class="pstat-label">Reactions · 90d</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-value pos">62%</div>
+          <div class="pstat-label">Positive</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-value neg">17%</div>
+          <div class="pstat-label">Concerns</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-value">11</div>
+          <div class="pstat-label">AR spawns</div>
+        </div>
+      </div>
+
+      <div class="sentiment-ribbon">
+        <div class="sr-pos"></div>
+        <div class="sr-neu"></div>
+        <div class="sr-neg"></div>
+      </div>
+      <div class="sentiment-legend">
+        <span><strong>62%</strong> Positive</span>
+        <span><strong>21%</strong> Neutral</span>
+        <span><strong>17%</strong> Concerns</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">What people actually say</div>
+    <div class="section-count">4 dominant themes</div>
+  </div>
+
+  <div class="themes-grid">
+    <div class="theme-card pos">
+      <div class="theme-head">
+        <div class="theme-name">Handle-less detail</div>
+        <div class="theme-count">18 mentions</div>
+      </div>
+      <div class="theme-quotes">
+        <div class="theme-quote">"I love how this one has no handles at all, it looks so clean."</div>
+        <div class="theme-quote">"The line of the doors is unbroken. It's really elegant."</div>
+      </div>
+    </div>
+    <div class="theme-card pos">
+      <div class="theme-head">
+        <div class="theme-name">Oak warmth</div>
+        <div class="theme-count">14 mentions</div>
+      </div>
+      <div class="theme-quotes">
+        <div class="theme-quote">"The wood feels alive, not like a photo of wood."</div>
+        <div class="theme-quote">"The smoked oak is warmer than I expected. I like that."</div>
+      </div>
+    </div>
+    <div class="theme-card neg">
+      <div class="theme-head">
+        <div class="theme-name">Fingerprint concern</div>
+        <div class="theme-count">6 mentions</div>
+      </div>
+      <div class="theme-quotes">
+        <div class="theme-quote">"How does this hold up with two kids at home?"</div>
+        <div class="theme-quote">"I can already see fingerprints on the demo unit."</div>
+      </div>
+    </div>
+    <div class="theme-card neg">
+      <div class="theme-head">
+        <div class="theme-name">Price resistance</div>
+        <div class="theme-count">4 mentions</div>
+      </div>
+      <div class="theme-quotes">
+        <div class="theme-quote">"It's gorgeous but it's at the top of what we planned."</div>
+        <div class="theme-quote">"Is there a similar look in something more affordable?"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Reaction stream</div>
+    <div class="section-count">Last 12 · 34 total</div>
+  </div>
+
+  <div class="comments-stream">
+    <div class="comment">
+      <div class="comment-avatar">SM</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-name">Sylvan Marchetti</span>
+          <span class="comment-date">23 Apr</span>
+          <span class="comment-sentiment neu">Mixed</span>
+        </div>
+        <div class="comment-text">"The handle detail is beautiful. I'm worried about fingerprints with two kids."</div>
+      </div>
+      <div class="comment-outcome">
+        <strong>In session</strong>
+        Lena V.
+      </div>
+    </div>
+    <div class="comment">
+      <div class="comment-avatar">JH</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-name">Jonas Hartmann</span>
+          <span class="comment-date">22 Apr</span>
+          <span class="comment-sentiment pos">Positive</span>
+        </div>
+        <div class="comment-text">"The smoked oak version is exactly what my wife has been looking for. We're coming back together."</div>
+      </div>
+      <div class="comment-outcome">
+        <strong>Returning</strong>
+        Scheduled 27 Apr
+      </div>
+    </div>
+    <div class="comment">
+      <div class="comment-avatar">SK</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-name">Sofia Kovač</span>
+          <span class="comment-date">21 Apr</span>
+          <span class="comment-sentiment neg">Concern</span>
+        </div>
+        <div class="comment-text">"I love the look but it's above our budget. Is there a close alternative?"</div>
+      </div>
+      <div class="comment-outcome">
+        <strong>Redirected</strong>
+        → Flair Oak
+      </div>
+    </div>
+    <div class="comment">
+      <div class="comment-avatar">MR</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-name">Markus Richter</span>
+          <span class="comment-date">18 Apr</span>
+          <span class="comment-sentiment pos">Positive</span>
+        </div>
+        <div class="comment-text">"Clean lines, warm wood. This is the direction I want for the whole apartment."</div>
+      </div>
+      <div class="comment-outcome">
+        <strong>Converted</strong>
+        Deposit placed
+      </div>
+    </div>
+    <div class="comment">
+      <div class="comment-avatar">AB</div>
+      <div class="comment-body">
+        <div class="comment-head">
+          <span class="comment-name">Anna Brandt</span>
+          <span class="comment-date">16 Apr</span>
+          <span class="comment-sentiment neu">Mixed</span>
+        </div>
+        <div class="comment-text">"It's beautiful but I wonder if it's too dark for a north-facing room."</div>
+      </div>
+      <div class="comment-outcome">
+        <strong>AR spawned</strong>
+        Lighter variant
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+</div><!-- /app -->
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-glow"></div>
+  <div id="toastText">Spawning in AR…</div>
+</div>
+
+<script>
+  // ============ NAV ============
+  const navBtns = document.querySelectorAll('.nav-item[data-view]');
+  const views = document.querySelectorAll('.view');
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      navBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.view;
+      views.forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + target).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // ============ SESSION-MODE TOGGLE ============
+  const segs = document.querySelectorAll('.seg');
+  const modes = {
+    live: document.getElementById('mode-live'),
+    summary: document.getElementById('mode-summary')
+  };
+  const liveEyebrow = document.getElementById('liveEyebrow');
+  const liveTitle = document.getElementById('liveTitle');
+  const liveMeta = document.getElementById('liveMeta');
+
+  segs.forEach(seg => {
+    seg.addEventListener('click', () => {
+      if (seg.classList.contains('disabled')) return;
+      segs.forEach(s => s.classList.remove('on', 'ready'));
+      seg.classList.add('on');
+      const mode = seg.dataset.mode;
+      Object.values(modes).forEach(m => m.classList.remove('active'));
+      modes[mode].classList.add('active');
+
+      if (mode === 'summary') {
+        liveEyebrow.innerHTML = 'Session · 23 Apr · 14:22–15:08 · 46 min';
+        liveTitle.textContent = 'After Sylvan left the floor';
+        liveMeta.innerHTML = '<strong>12 spatial briefs</strong>7 positive · 3 concerns · 2 neutral<br>3 external references · 4 AR spawns';
+      } else {
+        liveEyebrow.innerHTML = '<span class="eyebrow-dot"></span>Session in progress · 00:18:42';
+        liveTitle.textContent = 'Sylvan Marchetti is browsing';
+        liveMeta.innerHTML = '<strong>Kitchen Floor · Ground</strong>Started 14:22 · 7 notes · 3 external refs<br>Device PP-07 · Signal nominal';
+      }
+    });
+  });
+
+  // ============ END SESSION ============
+  const endBtn = document.getElementById('endSessionBtn');
+  const summarySeg = document.getElementById('summarySeg');
+  const liveSeg = document.querySelector('.seg[data-mode="live"]');
+  const statusMeta = document.getElementById('sessionStatusMeta');
+  let sessionEnded = false;
+
+  endBtn.addEventListener('click', () => {
+    if (sessionEnded) {
+      sessionEnded = false;
+      summarySeg.classList.remove('ready');
+      summarySeg.classList.add('disabled');
+      liveSeg.classList.add('live-mode');
+      statusMeta.textContent = 'Active · 00:18:42';
+      endBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> End session';
+      segs.forEach(s => s.classList.remove('on'));
+      liveSeg.classList.add('on');
+      Object.values(modes).forEach(m => m.classList.remove('active'));
+      modes.live.classList.add('active');
+    } else {
+      sessionEnded = true;
+      summarySeg.classList.remove('disabled');
+      summarySeg.classList.add('ready');
+      liveSeg.classList.remove('live-mode');
+      statusMeta.textContent = 'Ended 15:08 · 46m';
+      endBtn.innerHTML = '↺ Reset demo';
+      showToast('Session ended. Summary ready to review.');
+    }
+  });
+
+  // ============ MATCHES TOGGLE ============
+  function toggleMatches(btn) {
+    const note = btn.closest('.note');
+    const matches = note.querySelector('.matches');
+    if (!matches) return;
+    const open = matches.classList.toggle('open');
+    btn.textContent = open ? 'Hide matches' : btn.textContent.replace('Hide matches', 'See matches');
+  }
+
+  // ============ AR SPAWN ============
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  let toastTimer;
+
+  function spawnAR(card, productName) {
+    const wasSpawned = card.classList.contains('spawned');
+    const spawnBtn = card.querySelector('.match-spawn');
+    if (wasSpawned) {
+      card.classList.remove('spawned');
+      spawnBtn.textContent = 'Spawn in AR';
+      showToast('Removed ' + productName + ' from AR view');
+    } else {
+      card.classList.add('spawned');
+      spawnBtn.textContent = 'Spawned in AR';
+      showToast('Spawning ' + productName + ' in Sylvan\'s AR view…');
+    }
+  }
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  // ============ FILTER CHIPS ============
+  document.querySelectorAll('.feed-controls .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.parentNode.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+    });
+  });
+
+  // ============ CTA → PROFILES ============
+  const ctaBtn = document.getElementById('ctaToProfile');
+  const ctaCard = document.getElementById('profileCta');
+  function goToProfile() {
+    const tab = document.querySelector('.nav-item[data-view="profile"]');
+    if (tab) tab.click();
+  }
+  if (ctaBtn) ctaBtn.addEventListener('click', (e) => { e.stopPropagation(); goToProfile(); });
+  if (ctaCard) ctaCard.addEventListener('click', goToProfile);
+
+  // ============ SEND RECAP / EXPORT ============
+  const sendRecapBtn = document.getElementById('sendRecapBtn');
+  if (sendRecapBtn) {
+    sendRecapBtn.addEventListener('click', () => {
+      showToast('Recap sent to sylvan.m@example.com');
+    });
+  }
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', () => {
+      showToast('Exporting session summary as PDF…');
+    });
+  }
+
+  // ============ CUSTOMER LIST ============
+  document.querySelectorAll('.customer-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.customer-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      const name = item.querySelector('.ci-name').textContent;
+      if (item.dataset.customer !== 'sylvan') {
+        showToast('Profile for ' + name + ' would load here');
+      }
+    });
+  });
+
+  // ============ SEARCH ============
+  const searchInput = document.getElementById('customerSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      document.querySelectorAll('.customer-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = (q === '' || text.includes(q)) ? '' : 'none';
+      });
+    });
+  }
+</script>
+
+</body>
 </html>
