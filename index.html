@@ -3601,6 +3601,9 @@
   function normalizePin(row, recommendations = []) {
     return {
       id: row.id,
+      sessionId: row.session_id || '',
+      customerId: row.customer_id || '',
+      anchorId: row.anchor_id || '',
       detectedProduct: row.detected_product || 'Detected product',
       summary: row.summary_text || 'New spatial brief',
       transcript: row.transcribe_text || '',
@@ -3609,6 +3612,39 @@
       createdAt: row.created_at,
       recommendations: recommendations.map(normalizeRecommendation)
     };
+  }
+
+  function mergeBrief(existing, incoming) {
+    if (!existing) return incoming;
+    return {
+      ...existing,
+      ...incoming,
+      detectedProduct: incoming.detectedProduct !== 'Detected product' ? incoming.detectedProduct : existing.detectedProduct,
+      summary: incoming.summary !== 'New spatial brief' ? incoming.summary : existing.summary,
+      transcript: incoming.transcript || existing.transcript,
+      sentiment: incoming.sentiment !== 'neutral' ? incoming.sentiment : existing.sentiment,
+      imageUrl: incoming.imageUrl || existing.imageUrl,
+      createdAt: existing.createdAt || incoming.createdAt,
+      recommendations: incoming.recommendations.length ? incoming.recommendations : existing.recommendations
+    };
+  }
+
+  function findBriefIndex(brief) {
+    if (brief.anchorId) {
+      const anchorMatch = showroomState.briefs.findIndex(existing => existing.anchorId && existing.anchorId === brief.anchorId);
+      if (anchorMatch !== -1) return anchorMatch;
+    }
+    return showroomState.briefs.findIndex(existing => existing.id === brief.id);
+  }
+
+  function upsertBrief(brief) {
+    const existingIndex = findBriefIndex(brief);
+    if (existingIndex === -1) {
+      showroomState.briefs = [brief, ...showroomState.briefs].slice(0, 20);
+      return true;
+    }
+    showroomState.briefs[existingIndex] = mergeBrief(showroomState.briefs[existingIndex], brief);
+    return false;
   }
 
   function renderMatchCard(match, pinId) {
@@ -3809,7 +3845,7 @@
     renderShowroomBriefs();
   }
 
-  async function prependLivePin(pin) {
+  async function upsertLivePin(pin, notifyNew = false) {
     let recommendationsByPin = new Map();
     try {
       recommendationsByPin = await fetchRecommendationsForPins([pin.id]);
@@ -3817,9 +3853,20 @@
       console.error(recommendationError);
     }
     const brief = normalizePin(pin, recommendationsByPin.get(pin.id) || []);
-    showroomState.briefs = [brief, ...showroomState.briefs.filter(existing => existing.id !== brief.id)].slice(0, 20);
+    const inserted = upsertBrief(brief);
     renderShowroomBriefs();
-    showToast('New spatial brief landed from SnapCloud');
+    if (notifyNew && inserted) showToast('New spatial brief landed from SnapCloud');
+  }
+
+  async function refreshRecommendationsForPin(pinId) {
+    const recommendationsByPin = await fetchRecommendationsForPins([pinId]);
+    const index = showroomState.briefs.findIndex(brief => brief.id === pinId);
+    if (index === -1) return;
+    showroomState.briefs[index] = {
+      ...showroomState.briefs[index],
+      recommendations: (recommendationsByPin.get(pinId) || []).map(normalizeRecommendation)
+    };
+    renderShowroomBriefs();
   }
 
   function subscribeToPins() {
@@ -3827,9 +3874,23 @@
     showroomState.realtimeChannel = supabaseClient
       .channel('showroom-pins')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, payload => {
-        prependLivePin(payload.new).catch(error => {
+        upsertLivePin(payload.new, true).catch(error => {
           console.error(error);
           showToast('New pin arrived, but recommendations could not load.');
+        });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, payload => {
+        upsertLivePin(payload.new).catch(error => {
+          console.error(error);
+          showToast('Spatial brief updated, but the card could not refresh.');
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pin_recommendations' }, payload => {
+        const pinId = payload.new?.pin_id || payload.old?.pin_id;
+        if (!pinId) return;
+        refreshRecommendationsForPin(pinId).catch(error => {
+          console.error(error);
+          showToast('Product matches updated, but could not refresh.');
         });
       })
       .subscribe(status => {
