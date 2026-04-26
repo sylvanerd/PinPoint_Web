@@ -3657,7 +3657,6 @@
     const material = formatJsonValue(product.materials);
     const style = formatJsonValue(product.style);
     const rating = product.rating ? 'Rating ' + product.rating : '';
-    const hasAR = Boolean(product.model_3d_url);
     const productId = match.productId || product.id || '';
     const chips = [material, style, rating]
       .filter(Boolean)
@@ -3667,7 +3666,7 @@
     const meta = [sku, category, price].filter(Boolean).join(' · ');
 
     return `
-      <div class="match ${hasAR ? '' : 'no-ar'}" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}" data-model-url="${escapeHtml(product.model_3d_url || '')}">
+      <div class="match" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}">
         <div class="match-img">
           ${product.image_url ? '<img class="match-photo" src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" />' : fallbackProductSvg()}
           ${score ? '<span class="match-confidence">' + escapeHtml(score) + '</span>' : ''}
@@ -3678,7 +3677,7 @@
           ${chips ? '<div class="match-detail-chips">' + chips + '</div>' : ''}
           ${match.reason ? '<div class="match-reason">' + escapeHtml(match.reason) + '</div>' : ''}
         </div>
-        <button class="match-spawn" ${hasAR ? 'onclick="spawnAR(this.closest(\'.match\'))"' : 'disabled'}>${hasAR ? 'See in AR' : 'No AR model'}</button>
+        <button class="match-spawn" onclick="spawnAR(this.closest('.match'))">See in AR</button>
       </div>
     `;
   }
@@ -3994,64 +3993,74 @@
   const toastText = document.getElementById('toastText');
   let toastTimer;
 
-  async function createARSpawnRequest(card) {
+  function arProductName(card, fallbackName) {
+    if (fallbackName) return fallbackName;
+    if (card.dataset.productName) return card.dataset.productName;
+    const nameEl = card.querySelector('.match-name');
+    return nameEl ? nameEl.textContent.trim() : 'this product';
+  }
+
+  function fallbackProductId(productName) {
+    let hash = 0;
+    for (let i = 0; i < productName.length; i++) {
+      hash = ((hash * 31) + productName.charCodeAt(i)) >>> 0;
+    }
+    return hash || 1;
+  }
+
+  function fallbackPinId(card, productName) {
+    if (card.dataset.pinId) return card.dataset.pinId;
+    const note = card.closest('.note');
+    const noteIndex = note ? note.querySelector('.note-index') : null;
+    const label = noteIndex ? noteIndex.textContent.trim() : 'demo';
+    return `webportal-${label}-${fallbackProductId(productName)}`;
+  }
+
+  async function createARSpawnRequest(card, fallbackName) {
     if (!supabaseClient) throw new Error('Supabase client failed to load.');
 
+    const productName = arProductName(card, fallbackName);
+    const rawProductId = Number(card.dataset.productId);
+    const productId = Number.isFinite(rawProductId) && rawProductId > 0
+      ? rawProductId
+      : fallbackProductId(productName);
+
     // This row is the handoff from the web portal to the Spectacles app.
-    // Two-stage flow:
-    //   1. INSERT with status='pending_conversion' and original_model_3d_url=<vendor URL>.
-    //      The vendor GLB is often Draco-compressed (e.g. IKEA dimma) and the
-    //      Lens Studio runtime cannot load that directly without crashing.
-    //   2. Invoke the `convert-glb` edge function. It downloads the source,
-    //      strips Draco compression, uploads the plain GLB to the `glb-cache`
-    //      Storage bucket, and updates this row with model_3d_url + status='pending'.
-    //   3. Spectacles polls for status='pending' rows and instantiates the
-    //      converted GLB.
+    // Current simplified flow: Spectacles listens for `pending` requests,
+    // claims one, and enables a pre-placed model in front of the user.
     const request = {
       id: crypto.randomUUID(),
-      pin_id: card.dataset.pinId,
-      product_id: Number(card.dataset.productId),
-      original_model_3d_url: card.dataset.modelUrl,
-      status: 'pending_conversion'
+      pin_id: fallbackPinId(card, productName),
+      product_id: productId,
+      status: 'pending'
     };
 
-    if (!request.pin_id || !request.product_id || !request.original_model_3d_url) {
-      throw new Error('Missing pin, product, or model URL for AR spawn request.');
+    if (!request.pin_id || !request.product_id) {
+      throw new Error('Missing pin or product for AR spawn request.');
     }
 
-    const { error: insertError } = await supabaseClient
+    const { error } = await supabaseClient
       .from('ar_spawn_requests')
       .insert(request);
 
-    if (insertError) throw insertError;
-
-    // Fire-and-forget the conversion. The edge function flips the row to
-    // status='pending' (success) or status='failed' (with conversion_error
-    // populated) when it finishes; the Spectacles client owns the rest.
-    const { error: invokeError } = await supabaseClient.functions.invoke('convert-glb', {
-      body: { request_id: request.id }
-    });
-    if (invokeError) {
-      console.warn('convert-glb invoke failed; row left in pending_conversion:', invokeError);
-    }
-
+    if (error) throw error;
     return request;
   }
 
-  async function spawnAR(card) {
+  async function spawnAR(card, fallbackName) {
     if (card.classList.contains('no-ar')) return;
-    const productName = card.dataset.productName || 'this product';
+    const productName = arProductName(card, fallbackName);
     const wasSpawned = card.classList.contains('spawned');
     const spawnBtn = card.querySelector('.match-spawn');
     if (wasSpawned) {
       card.classList.remove('spawned');
-      spawnBtn.textContent = 'See in AR';
+      spawnBtn.textContent = 'Spawn in AR';
       showToast(productName + ' is ready to send again');
     } else {
       spawnBtn.disabled = true;
       spawnBtn.textContent = 'Sending...';
       try {
-        await createARSpawnRequest(card);
+        await createARSpawnRequest(card, fallbackName);
         card.classList.add('spawned');
         spawnBtn.disabled = false;
         spawnBtn.textContent = 'Request sent';
@@ -4059,7 +4068,7 @@
       } catch (error) {
         console.error(error);
         spawnBtn.disabled = false;
-        spawnBtn.textContent = 'See in AR';
+        spawnBtn.textContent = 'Spawn in AR';
         showToast('Could not send AR spawn request.');
       }
     }
