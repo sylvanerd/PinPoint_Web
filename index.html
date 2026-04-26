@@ -3512,7 +3512,8 @@
   const showroomState = {
     briefs: [],
     filter: 'all',
-    realtimeChannel: null
+    realtimeChannel: null,
+    refreshTimers: new Map()
   };
 
   function escapeHtml(value) {
@@ -3841,14 +3842,29 @@
       console.error(recommendationError);
       showToast('Pins loaded, but recommendations could not load.');
     }
-    showroomState.briefs = pinRows.map(pin => normalizePin(pin, recommendationsByPin.get(pin.id) || []));
+    showroomState.briefs = [];
+    pinRows.forEach(pin => {
+      upsertBrief(normalizePin(pin, recommendationsByPin.get(pin.id) || []));
+    });
     renderShowroomBriefs();
   }
 
-  async function upsertLivePin(pin, notifyNew = false) {
+  async function fetchPinById(pinId) {
+    const { data, error } = await supabaseClient
+      .from('pins')
+      .select('id,session_id,customer_id,detected_product,anchor_id,spatial_position,transcribe_text,summary_text,sentiment,image_url,created_at,updated_at')
+      .eq('id', pinId)
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function refreshPinById(pinId, notifyNew = false) {
+    if (!pinId) return;
+    const pin = await fetchPinById(pinId);
     let recommendationsByPin = new Map();
     try {
-      recommendationsByPin = await fetchRecommendationsForPins([pin.id]);
+      recommendationsByPin = await fetchRecommendationsForPins([pinId]);
     } catch (recommendationError) {
       console.error(recommendationError);
     }
@@ -3856,6 +3872,20 @@
     const inserted = upsertBrief(brief);
     renderShowroomBriefs();
     if (notifyNew && inserted) showToast('New spatial brief landed from SnapCloud');
+  }
+
+  function schedulePinRefresh(pinId, notifyNew = false, delay = 500) {
+    if (!pinId) return;
+    const existingTimer = showroomState.refreshTimers.get(pinId);
+    if (existingTimer) clearTimeout(existingTimer);
+    const timer = setTimeout(() => {
+      showroomState.refreshTimers.delete(pinId);
+      refreshPinById(pinId, notifyNew).catch(error => {
+        console.error(error);
+        showToast('Spatial brief changed, but the card could not refresh.');
+      });
+    }, delay);
+    showroomState.refreshTimers.set(pinId, timer);
   }
 
   async function refreshRecommendationsForPin(pinId) {
@@ -3874,16 +3904,10 @@
     showroomState.realtimeChannel = supabaseClient
       .channel('showroom-pins')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, payload => {
-        upsertLivePin(payload.new, true).catch(error => {
-          console.error(error);
-          showToast('New pin arrived, but recommendations could not load.');
-        });
+        schedulePinRefresh(payload.new?.id, true, 250);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, payload => {
-        upsertLivePin(payload.new).catch(error => {
-          console.error(error);
-          showToast('Spatial brief updated, but the card could not refresh.');
-        });
+        schedulePinRefresh(payload.new?.id, false, 700);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pin_recommendations' }, payload => {
         const pinId = payload.new?.pin_id || payload.old?.pin_id;
