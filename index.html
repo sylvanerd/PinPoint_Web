@@ -1303,25 +1303,6 @@
   .flag-card.pos .flag-quote { border-left-color: var(--secondary); }
   .flag-card.neg .flag-quote { border-left-color: var(--error); }
   .flag-card.neu .flag-quote { border-left-color: var(--warning); }
-  .summary-session-tabs-wrap { margin-bottom: 20px; }
-  .summary-session-tabs-label {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--on-surface-variant); margin-bottom: 10px;
-  }
-  .summary-session-tabs-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .summary-session-tab {
-    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 14px;
-    border-radius: var(--r-lg); border: 1px solid var(--outline-variant);
-    background: var(--surface-container-lowest); color: var(--on-surface); cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-  }
-  .summary-session-tab:hover { border-color: var(--secondary-tint); background: var(--secondary-tint-soft); }
-  .summary-session-tab.active { border-color: var(--secondary); background: var(--secondary-tint-soft); font-weight: 600; }
-  .summary-session-tab:disabled,
-  .summary-session-tab[aria-disabled="true"] {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
   .summary-rec-meta { font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; font-weight: 500; }
   .summary-rec-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
   .summary-rec-chip {
@@ -2828,11 +2809,6 @@
       </button>
     </div>
 
-    <div class="summary-session-tabs-wrap" id="summarySessionTabsWrap" hidden>
-      <div class="summary-session-tabs-label" id="summarySessionTabsLabel">Visits for this customer</div>
-      <div class="summary-session-tabs-row" id="summarySessionTabsRow" role="tablist" aria-label="Session summaries by visit"></div>
-    </div>
-
     <div class="summary-grid">
       <div>
         <div class="summary-hero" id="summaryHero">
@@ -3861,10 +3837,7 @@
     session: null,
     customerName: '',
     _pinCountForSession: null,
-    customerSessions: [],
-    activeSessionId: null,
     pinsForTimeline: [],
-    _lastTrackedSummarySid: null,
     recommendedRecs: null,
     recommendedFilter: 'all',
     recommendedExpanded: false
@@ -4655,96 +4628,14 @@
     }));
   }
 
-  async function fetchCustomerVisitList(customerId) {
-    if (!supabaseClient || !customerId) return [];
-    const { data, error } = await supabaseClient
-      .from('visit_summaries')
-      .select('session_id,generated_at')
-      .eq('customer_id', customerId)
-      .order('generated_at', { ascending: false });
-    if (error) {
-      console.warn('customer visit_summaries', error);
-      return [];
-    }
-    return data || [];
-  }
-
-  function formatSessionTabLabel(iso) {
-    if (!iso) return 'Visit';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return 'Visit';
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(d);
-  }
-
-  function renderSessionSummaryTabs() {
-    const wrap = document.getElementById('summarySessionTabsWrap');
-    const row = document.getElementById('summarySessionTabsRow');
-    if (!wrap || !row) return;
-    const list = visitSummaryState.customerSessions || [];
-    if (list.length === 0) {
-      wrap.hidden = true;
-      row.innerHTML = '';
-      return;
-    }
-    wrap.hidden = false;
-    const tracked = getTrackedSessionId();
-    row.innerHTML = list
-      .map(s => {
-        const isActive = String(visitSummaryState.activeSessionId) === String(s.session_id);
-        const isCurrentFloor = tracked && String(tracked) === String(s.session_id);
-        const sub = isCurrentFloor ? ' · current' : '';
-        return (
-          '<button type="button" role="tab" class="summary-session-tab' + (isActive ? ' active' : '') + '" ' +
-          'data-session-id="' + escapeHtml(s.session_id) + '" ' +
-          'aria-selected="' + (isActive ? 'true' : 'false') + '">' +
-          escapeHtml(formatSessionTabLabel(s.generated_at) + sub) +
-          '</button>'
-        );
-      })
-      .join('');
-    row.querySelectorAll('.summary-session-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-session-id');
-        if (id) loadSessionSummaryById(id).catch(e => console.warn(e));
-      });
-    });
-  }
-
-  async function loadSessionSummaryById(sessionId) {
-    if (!supabaseClient || !sessionId) return;
-    const [vs, sessionRow, pinCount, pinList] = await Promise.all([
-      fetchVisitSummaryForSession(sessionId),
-      fetchSessionRow(sessionId),
-      fetchPinCountForSession(sessionId),
-      fetchPinsForSessionForTimeline(sessionId)
-    ]);
-    visitSummaryState.activeSessionId = sessionId;
-    visitSummaryState.row = vs.row;
-    visitSummaryState.session = sessionRow;
-    if (vs.customerName) visitSummaryState.customerName = vs.customerName;
-    visitSummaryState._pinCountForSession = pinCount;
-    visitSummaryState.pinsForTimeline = pinList;
-    if (vs.row && vs.row.customer_id) {
-      visitSummaryState.customerSessions = await fetchCustomerVisitList(vs.row.customer_id);
-    }
-    renderSessionSummaryTabs();
-    applySessionSummaryToDom(sessionId);
-    if (document.getElementById('mode-summary').classList.contains('active')) {
-      applySummaryViewHeaders();
-    }
-  }
-
   async function fetchVisitSummaryForSession(sessionId) {
     if (!supabaseClient || !sessionId) return { row: null, customerName: '' };
     const { data, error } = await supabaseClient
       .from('visit_summaries')
       .select('id,session_id,customer_id,summary_text,key_preferences,recommended_products,generated_at')
       .eq('session_id', sessionId)
+      .order('generated_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error) {
       console.warn('visit_summaries', error);
@@ -4758,72 +4649,87 @@
     return { row: data, customerName: name };
   }
 
+  /** Most recent visit_summaries row for this customer (by generated_at). */
+  async function fetchLatestVisitSummaryForCustomer(customerId) {
+    if (!supabaseClient || !customerId) return { row: null, customerName: '' };
+    const { data, error } = await supabaseClient
+      .from('visit_summaries')
+      .select('id,session_id,customer_id,summary_text,key_preferences,recommended_products,generated_at')
+      .eq('customer_id', customerId)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.warn('visit_summaries latest by customer', error);
+      return { row: null, customerName: '' };
+    }
+    if (!data) return { row: null, customerName: '' };
+    let name = '';
+    if (data.customer_id) {
+      name = await fetchCustomerName(data.customer_id);
+    }
+    return { row: data, customerName: name };
+  }
+
+  function getEffectiveSummarySessionId() {
+    if (visitSummaryState.row && visitSummaryState.row.session_id) {
+      return visitSummaryState.row.session_id;
+    }
+    return getTrackedSessionId();
+  }
+
   async function syncVisitSummaryForTrackedSession() {
     if (!supabaseClient) return;
+    const customerId = showroomState.briefs[0] && showroomState.briefs[0].customerId;
     const sid = getTrackedSessionId();
-    if (!sid) {
+
+    if (!customerId && !sid) {
       visitSummaryState.row = null;
       visitSummaryState.session = null;
       visitSummaryState.customerName = '';
       visitSummaryState._pinCountForSession = null;
       visitSummaryState.pinsForTimeline = [];
-      visitSummaryState.customerSessions = [];
-      visitSummaryState.activeSessionId = null;
-      visitSummaryState._lastTrackedSummarySid = null;
       updateSummaryTabAvailability();
-      renderSessionSummaryTabs();
       if (document.getElementById('mode-summary').classList.contains('active')) {
         applySessionSummaryToDom(null);
       }
       return;
     }
 
-    const cidFromBrief = showroomState.briefs[0] && showroomState.briefs[0].customerId;
-    const viewingOther =
-      visitSummaryState.activeSessionId &&
-      String(visitSummaryState.activeSessionId) !== String(sid);
-
-    let sessionsList = [];
-    if (cidFromBrief) {
-      sessionsList = await fetchCustomerVisitList(cidFromBrief);
+    let vs = { row: null, customerName: '' };
+    if (customerId) {
+      vs = await fetchLatestVisitSummaryForCustomer(customerId);
     }
-    visitSummaryState.customerSessions = sessionsList;
-
-    if (String(visitSummaryState._lastTrackedSummarySid || '') !== String(sid)) {
-      if (!viewingOther) {
-        visitSummaryState.activeSessionId = sid;
-      }
+    if (!vs.row && sid) {
+      vs = await fetchVisitSummaryForSession(sid);
     }
-    visitSummaryState._lastTrackedSummarySid = sid;
-
-    renderSessionSummaryTabs();
-
-    if (viewingOther) {
+    if (!vs.row) {
+      visitSummaryState.row = null;
+      visitSummaryState.session = null;
+      visitSummaryState.customerName = '';
+      visitSummaryState._pinCountForSession = null;
+      visitSummaryState.pinsForTimeline = [];
       updateSummaryTabAvailability();
+      if (document.getElementById('mode-summary') && document.getElementById('mode-summary').classList.contains('active')) {
+        applySessionSummaryToDom(null);
+      }
       return;
     }
 
-    const [vs, sessionRow, pinCount, pinList] = await Promise.all([
-      fetchVisitSummaryForSession(sid),
-      fetchSessionRow(sid),
-      fetchPinCountForSession(sid),
-      fetchPinsForSessionForTimeline(sid)
+    const effectiveSessionId = vs.row.session_id;
+    const [sessionRow, pinCount, pinList] = await Promise.all([
+      fetchSessionRow(effectiveSessionId),
+      fetchPinCountForSession(effectiveSessionId),
+      fetchPinsForSessionForTimeline(effectiveSessionId)
     ]);
     visitSummaryState.row = vs.row;
     visitSummaryState.session = sessionRow;
     visitSummaryState.customerName = vs.customerName;
     visitSummaryState._pinCountForSession = pinCount;
     visitSummaryState.pinsForTimeline = pinList;
-    visitSummaryState.activeSessionId = sid;
-
-    if (vs.row && vs.row.customer_id) {
-      const byCustomer = await fetchCustomerVisitList(vs.row.customer_id);
-      visitSummaryState.customerSessions = byCustomer;
-      renderSessionSummaryTabs();
-    }
 
     updateSummaryTabAvailability();
-    applySessionSummaryToDom(sid);
+    applySessionSummaryToDom(effectiveSessionId);
   }
 
   function scheduleVisitSummarySync() {
@@ -4837,8 +4743,7 @@
     const summarySeg = document.getElementById('summarySeg');
     if (!summarySeg) return;
     const hasAnySummary = visitSummaryState.row && visitSummaryState.row.session_id;
-    const hasPastVisits = visitSummaryState.customerSessions && visitSummaryState.customerSessions.length > 0;
-    if (hasAnySummary || hasPastVisits) {
+    if (hasAnySummary) {
       summarySeg.classList.remove('disabled');
       summarySeg.classList.add('ready');
     } else if (sessionEnded) {
@@ -4886,7 +4791,7 @@
     summarySeg.classList.add('on', 'ready');
     Object.values(modes).forEach(m => m.classList.remove('active'));
     modes.summary.classList.add('active');
-    applySessionSummaryToDom(visitSummaryState.activeSessionId || (visitSummaryState.row && visitSummaryState.row.session_id) || getTrackedSessionId());
+    applySessionSummaryToDom(getEffectiveSummarySessionId());
     applySummaryViewHeaders();
   }
 
@@ -4901,36 +4806,19 @@
 
   function handleVisitSummaryRealtime(payload) {
     const row = payload.new;
-    if (!row || !row.session_id) return;
+    if (!row) return;
+    const customerId = showroomState.briefs[0] && showroomState.briefs[0].customerId;
     const tracked = getTrackedSessionId();
-    if (!tracked || String(tracked) !== String(row.session_id)) {
+    const forThisCustomer =
+      customerId && row.customer_id && String(row.customer_id) === String(customerId);
+    const forThisSession = tracked && row.session_id && String(row.session_id) === String(tracked);
+    if (!forThisCustomer && !forThisSession) {
       return;
     }
-    const viewingOther =
-      visitSummaryState.activeSessionId &&
-      String(visitSummaryState.activeSessionId) !== String(tracked);
     (async () => {
       try {
-        if (row.customer_id) {
-          visitSummaryState.customerSessions = await fetchCustomerVisitList(row.customer_id);
-          renderSessionSummaryTabs();
-        }
-        if (viewingOther) {
-          updateSummaryTabAvailability();
-          return;
-        }
-        visitSummaryState.row = row;
-        visitSummaryState.customerName = row.customer_id ? await fetchCustomerName(row.customer_id) : '';
-        visitSummaryState.session = await fetchSessionRow(row.session_id);
-        const [pc, pinList] = await Promise.all([
-          fetchPinCountForSession(row.session_id),
-          fetchPinsForSessionForTimeline(row.session_id)
-        ]);
-        visitSummaryState._pinCountForSession = pc;
-        visitSummaryState.pinsForTimeline = pinList;
-        visitSummaryState.activeSessionId = row.session_id;
-        updateSummaryTabAvailability();
-        applySessionSummaryToDom(row.session_id);
+        await syncVisitSummaryForTrackedSession();
+        applySummaryViewHeaders();
         switchToSessionSummaryView();
         showToast('Session summary is ready');
       } catch (e) {
@@ -4949,11 +4837,8 @@
 
       if (mode === 'summary') {
         (async () => {
-          if (!visitSummaryState.row && visitSummaryState.customerSessions && visitSummaryState.customerSessions.length) {
-            await loadSessionSummaryById(visitSummaryState.customerSessions[0].session_id);
-          } else {
-            applySessionSummaryToDom(visitSummaryState.activeSessionId || getTrackedSessionId());
-          }
+          await syncVisitSummaryForTrackedSession();
+          applySessionSummaryToDom(getEffectiveSummarySessionId());
           applySummaryViewHeaders();
         })();
       } else {
