@@ -1328,6 +1328,13 @@
   .flag-card.pos .flag-sentiment { background: rgba(0, 106, 97, 0.12); color: var(--secondary); }
   .flag-card.neg .flag-sentiment { background: color-mix(in srgb, var(--error) 12%, transparent); color: var(--error); }
   .flag-card.neu .flag-sentiment { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--on-surface); }
+  .flag-match-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--secondary);
+    margin: 0 0 6px;
+  }
   #mode-summary .section-head#summaryFlagSectionHead { gap: 12px; }
   #mode-summary .section-head#summaryFlagSectionHead > div:first-child { min-width: 0; flex: 1; }
 
@@ -3843,6 +3850,7 @@
     recommendedExpanded: false
   };
   const SUMMARY_REC_PREVIEW = 6;
+  const DEFAULT_SUMMARY_CUSTOMER_NAME = 'Sylvan Marchetti';
   const SHOWROOM_FLOOR_LABEL = 'Kitchen A';
   let visitSummarySyncTimer = null;
 
@@ -4306,6 +4314,10 @@
         const sent = getPinSentimentForRec(pinSentiment, rec.pin_id);
         const c = flagCardClassForSentiment(sent);
         const badge = flagSentimentBadgeText(sent);
+        const pctLabel = matchScoreLabel(rec.match_score);
+        const matchPctHtml = pctLabel
+          ? '<div class="flag-match-pct">' + escapeHtml(pctLabel) + ' match</div>'
+          : '';
         const img = p.image_url
           ? '<img class="match-photo" src="' + escapeHtml(p.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;" />'
           : fallbackProductSvg();
@@ -4315,6 +4327,7 @@
           '<div class="flag-img">' + img + '</div>' +
           '<div class="flag-body">' +
           '<div class="flag-name">' + escapeHtml(name) + '</div>' +
+          matchPctHtml +
           '<div class="flag-sku">' + escapeHtml(skuLine) + '</div>' +
           '<div class="flag-quote">"' + escapeHtml(quote) + '"</div>' +
           '</div></div>'
@@ -4398,7 +4411,7 @@
   function applySessionSummaryToDom(sessionId) {
     const v = visitSummaryState.row;
     const sess = visitSummaryState.session;
-    const name = visitSummaryState.customerName || 'Customer';
+    const name = visitSummaryState.customerName || DEFAULT_SUMMARY_CUSTOMER_NAME;
     const kgroups = getKeywordGroups(v && v.key_preferences);
     const parts = { pos: kgroups.pos, neg: kgroups.neg, neu: kgroups.neu };
     const kStructured = kgroups.structured;
@@ -4562,7 +4575,16 @@
       if (tTag) tTag.textContent = '0 events';
     }
 
-    const initial = (name && name[0] ? name[0].toUpperCase() : '?');
+    const nameParts = String(name || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const initial =
+      nameParts.length >= 2
+        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+        : nameParts.length === 1
+          ? nameParts[0][0].toUpperCase()
+          : '?';
     const ctaI = document.getElementById('summaryCtaIcon');
     if (ctaI) ctaI.textContent = initial;
     document.getElementById('summaryCtaTitle').textContent = v
@@ -4758,7 +4780,7 @@
   function applySummaryViewHeaders() {
     const v = visitSummaryState.row;
     const sess = visitSummaryState.session;
-    const name = visitSummaryState.customerName || 'Customer';
+    const name = visitSummaryState.customerName || DEFAULT_SUMMARY_CUSTOMER_NAME;
     if (v) {
       liveEyebrow.innerHTML = formatSessionEyebrow(sess, v.generated_at);
       liveTitle.textContent = 'After ' + name + ' left the floor';
