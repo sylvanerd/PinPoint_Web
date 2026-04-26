@@ -1303,6 +1303,52 @@
   .flag-card.pos .flag-quote { border-left-color: var(--secondary); }
   .flag-card.neg .flag-quote { border-left-color: var(--error); }
   .flag-card.neu .flag-quote { border-left-color: var(--warning); }
+  .summary-session-tabs-wrap { margin-bottom: 20px; }
+  .summary-session-tabs-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--on-surface-variant); margin-bottom: 10px;
+  }
+  .summary-session-tabs-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .summary-session-tab {
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 14px;
+    border-radius: var(--r-lg); border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest); color: var(--on-surface); cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .summary-session-tab:hover { border-color: var(--secondary-tint); background: var(--secondary-tint-soft); }
+  .summary-session-tab.active { border-color: var(--secondary); background: var(--secondary-tint-soft); font-weight: 600; }
+  .summary-session-tab:disabled,
+  .summary-session-tab[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .summary-rec-meta { font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; font-weight: 500; }
+  .summary-rec-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+  .summary-rec-chip {
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; padding: 6px 12px;
+    border-radius: var(--r-full); border: 1px solid var(--outline-variant); background: var(--surface-container-low);
+    color: var(--on-surface-variant); cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .summary-rec-chip:hover { border-color: var(--secondary-tint); color: var(--on-surface); }
+  .summary-rec-chip.on { border-color: var(--secondary); background: var(--secondary-tint-soft); color: var(--on-surface); font-weight: 600; }
+  .summary-rec-chip[data-filter="neg"].on { border-color: var(--error); }
+  .summary-rec-chip[data-filter="neu"].on { border-color: var(--warning); }
+  .summary-flag-grid-wrap { max-height: min(70vh, 640px); overflow-y: auto; border-radius: var(--r-lg); margin-bottom: 8px; }
+  .summary-flag-grid-wrap.expanded { max-height: none; }
+  .summary-rec-seeall {
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: var(--secondary);
+    background: none; border: none; padding: 8px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .summary-rec-seeall:hover { color: var(--on-surface); }
+  .flag-card .flag-sentiment {
+    position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 3px 7px; border-radius: var(--r-sm); z-index: 1;
+  }
+  .flag-card.pos .flag-sentiment { background: rgba(0, 106, 97, 0.12); color: var(--secondary); }
+  .flag-card.neg .flag-sentiment { background: color-mix(in srgb, var(--error) 12%, transparent); color: var(--error); }
+  .flag-card.neu .flag-sentiment { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--on-surface); }
+  #mode-summary .section-head#summaryFlagSectionHead { gap: 12px; }
+  #mode-summary .section-head#summaryFlagSectionHead > div:first-child { min-width: 0; flex: 1; }
 
   /* Right rail */
   .panel { padding: 20px; }
@@ -2768,9 +2814,9 @@
 
     <!-- Summary action bar -->
     <div class="summary-actions">
-      <div class="summary-actions-label">
+      <div class="summary-actions-label" id="summaryActionsLabel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span>Profile generated · <strong>ready to share</strong></span>
+        <span id="summaryReadyLabel">Profile generated · <strong>ready to share</strong></span>
       </div>
       <button class="btn btn-outline" id="exportPdfBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2782,154 +2828,92 @@
       </button>
     </div>
 
+    <div class="summary-session-tabs-wrap" id="summarySessionTabsWrap" hidden>
+      <div class="summary-session-tabs-label" id="summarySessionTabsLabel">Visits for this customer</div>
+      <div class="summary-session-tabs-row" id="summarySessionTabsRow" role="tablist" aria-label="Session summaries by visit"></div>
+    </div>
+
     <div class="summary-grid">
       <div>
-        <div class="summary-hero">
-          <div class="hero-eyebrow">Customer persona · AI-composed</div>
-          <div class="hero-persona">The <span class="accent">warm modernist.</span></div>
-          <p class="hero-tagline">Sylvan is aesthetically decisive but practically hesitant. She knows the look she wants (handle-less, warm oak, contrast islands) but needs reassurance on upkeep. Price signal is firmly mid-range. She buys on texture and daily ease, not brand.</p>
-          <div class="hero-facts">
+        <div class="summary-hero" id="summaryHero">
+          <div class="hero-eyebrow" id="summaryHeroEyebrow">Visit brief · from pins</div>
+          <div class="hero-persona" id="summaryHeroPersona">The <span class="accent">showroom visit.</span></div>
+          <p class="hero-tagline" id="summaryHeroTagline">When the session ends, the visit summary from SnapCloud and your edge function will appear here.</p>
+          <div class="hero-facts" id="summaryHeroFacts">
             <div>
-              <div class="fact-value">12</div>
+              <div class="fact-value" id="summaryFactBriefs">—</div>
               <div class="fact-label">Spatial briefs</div>
             </div>
             <div>
-              <div class="fact-value">46m</div>
+              <div class="fact-value" id="summaryFactTime">—</div>
               <div class="fact-label">Time on floor</div>
             </div>
             <div>
-              <div class="fact-value"><span class="accent">€11k</span></div>
-              <div class="fact-label">Midpoint signal</div>
+              <div class="fact-value" id="summaryFactMidpoint"><span class="accent">—</span></div>
+              <div class="fact-label" id="summaryFactMidpointLabel">Budget band</div>
             </div>
             <div>
-              <div class="fact-value">78<span style="font-size: 18px; opacity: 0.6;">%</span></div>
+              <div class="fact-value" id="summaryFactIntent">—</div>
               <div class="fact-label">Intent score</div>
             </div>
           </div>
         </div>
 
         <!-- Keywords extracted -->
-        <div class="keywords-section">
+        <div class="keywords-section" id="summaryKeywordsSection">
           <div class="keywords-head">
-            <div class="keywords-title">Keywords extracted across 12 briefs</div>
+            <div class="keywords-title" id="summaryKeywordsTitle">Key preferences · from this visit</div>
           </div>
-          <div class="keywords-sub">AI-extracted preference signals, grouped by sentiment. Mention counts shown per keyword.</div>
+          <div class="keywords-sub" id="summaryKeywordsSub">What resonated, what was a concern, and situational context — mention counts on each chip when the model provides them.</div>
 
-          <div class="keyword-group pos">
+          <div class="keyword-group pos" id="summaryKeywordGroupPos">
             <div class="keyword-group-label">
               <span class="group-dot"></span>
-              Positive signals
-              <span class="keyword-group-count">8 keywords · 24 mentions</span>
+              <span id="summaryKwPosHead">Positive signals</span>
+              <span class="keyword-group-count" id="summaryKwPosCount">0 preferences</span>
             </div>
-            <div class="keyword-chips">
-              <span class="kw-chip">handle-less<span class="kw-chip-count">5</span></span>
-              <span class="kw-chip">warm oak<span class="kw-chip-count">4</span></span>
-              <span class="kw-chip">smoked finish<span class="kw-chip-count">3</span></span>
-              <span class="kw-chip">dark contrast island<span class="kw-chip-count">3</span></span>
-              <span class="kw-chip">sage accent<span class="kw-chip-count">2</span></span>
-              <span class="kw-chip">clean / minimal<span class="kw-chip-count">3</span></span>
-              <span class="kw-chip">matte texture<span class="kw-chip-count">2</span></span>
-              <span class="kw-chip">wood + color combo<span class="kw-chip-count">2</span></span>
-            </div>
+            <div class="keyword-chips" id="summaryKeywordChipsPos"></div>
           </div>
 
-          <div class="keyword-group neg">
+          <div class="keyword-group neg" id="summaryKeywordGroupNeg">
             <div class="keyword-group-label">
               <span class="group-dot"></span>
-              Concerns &amp; rejections
-              <span class="keyword-group-count">5 keywords · 9 mentions</span>
+              <span>Concerns &amp; tradeoffs</span>
+              <span class="keyword-group-count" id="summaryKwNegCount">0 items</span>
             </div>
-            <div class="keyword-chips">
-              <span class="kw-chip">fingerprint / maintenance<span class="kw-chip-count">3</span></span>
-              <span class="kw-chip">gloss white<span class="kw-chip-count">2</span></span>
-              <span class="kw-chip">clinical / cold<span class="kw-chip-count">2</span></span>
-              <span class="kw-chip">visible hardware<span class="kw-chip-count">1</span></span>
-              <span class="kw-chip">price ceiling<span class="kw-chip-count">1</span></span>
-            </div>
+            <div class="keyword-chips" id="summaryKeywordChipsNeg"></div>
           </div>
 
-          <div class="keyword-group neu">
+          <div class="keyword-group neu" id="summaryKeywordGroupNeu">
             <div class="keyword-group-label">
               <span class="group-dot"></span>
-              Context &amp; constraints
-              <span class="keyword-group-count">4 keywords · 7 mentions</span>
+              <span>Context &amp; constraints</span>
+              <span class="keyword-group-count" id="summaryKwNeuCount">0 items</span>
             </div>
-            <div class="keyword-chips">
-              <span class="kw-chip">family with kids<span class="kw-chip-count">3</span></span>
-              <span class="kw-chip">mid-range budget<span class="kw-chip-count">2</span></span>
-              <span class="kw-chip">north-facing room<span class="kw-chip-count">1</span></span>
-              <span class="kw-chip">husband to consult<span class="kw-chip-count">1</span></span>
-            </div>
+            <div class="keyword-chips" id="summaryKeywordChipsNeu"></div>
           </div>
         </div>
 
-        <div class="section-head">
-          <div class="section-title">Flagged products · positive and negative</div>
-          <div class="section-count">6 of 12</div>
+        <div class="section-head" id="summaryFlagSectionHead">
+          <div>
+            <div class="section-title">Recommended products</div>
+            <div class="summary-rec-meta" id="summaryFlagMeta"></div>
+          </div>
+          <div class="section-count" id="summaryFlagCount">—</div>
         </div>
 
-        <div class="flag-grid">
-          <div class="flag-card pos">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#8a6a44"/><rect x="10" y="14" width="48" height="62" fill="#a8825a" rx="1"/><rect x="62" y="14" width="48" height="62" fill="#a8825a" rx="1"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Nobilia Senso</div>
-              <div class="flag-sku">SKU N-S-204 · Smoked oak</div>
-              <div class="flag-quote">"The handle detail is beautiful. I love how it has no handles at all."</div>
-            </div>
-          </div>
-          <div class="flag-card pos">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#d6cbb2"/><rect x="12" y="36" width="96" height="40" fill="#3a3530"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Leicht Topos</div>
-              <div class="flag-sku">SKU L-TP-051 · Graphite island</div>
-              <div class="flag-quote">"Dark below, something lighter above. It feels warm even though it's dark."</div>
-            </div>
-          </div>
-          <div class="flag-card neg">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#f4f0e8"/><rect x="12" y="14" width="46" height="62" fill="#fafafa"/><rect x="62" y="14" width="46" height="62" fill="#fafafa"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Nobilia Laser Soft</div>
-              <div class="flag-sku">SKU N-LS-077 · Gloss white</div>
-              <div class="flag-quote">"It's cold. It looks like a hospital. It has no soul."</div>
-            </div>
-          </div>
-          <div class="flag-card pos">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#e0d8c5"/><rect x="10" y="18" width="64" height="54" fill="#c9a577"/><rect x="78" y="18" width="30" height="54" fill="#006a61"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Chroma Sage</div>
-              <div class="flag-sku">SKU N-CH-309 · Sage pantry</div>
-              <div class="flag-quote">"The sage next to the wood is exactly the feeling I want."</div>
-            </div>
-          </div>
-          <div class="flag-card neu">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#c2b8a4"/><rect x="12" y="14" width="96" height="62" fill="#d9d0bc" rx="1"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Nobilia Touch</div>
-              <div class="flag-sku">SKU N-T-098 · Linen white</div>
-              <div class="flag-quote">"It's nice but a bit safe. I'd want more warmth somewhere."</div>
-            </div>
-          </div>
-          <div class="flag-card neg">
-            <div class="flag-img">
-              <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#a8825a"/><rect x="10" y="16" width="100" height="58" fill="#c9a577"/><circle cx="30" cy="30" r="2.5" fill="#131b2e"/><circle cx="90" cy="30" r="2.5" fill="#131b2e"/></svg>
-            </div>
-            <div class="flag-body">
-              <div class="flag-name">Häcker Classic</div>
-              <div class="flag-sku">SKU H-CL-012 · Traditional</div>
-              <div class="flag-quote">"Handles look dated. Too much hardware showing."</div>
-            </div>
+        <div class="summary-rec-filters" id="summaryRecFilters" hidden>
+          <button type="button" class="summary-rec-chip on" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button type="button" class="summary-rec-chip" data-filter="pos" role="tab" aria-selected="false">Positive</button>
+          <button type="button" class="summary-rec-chip" data-filter="neg" role="tab" aria-selected="false">Concern</button>
+          <button type="button" class="summary-rec-chip" data-filter="neu" role="tab" aria-selected="false">Neutral</button>
+        </div>
+
+        <div class="summary-flag-grid-wrap" id="summaryFlagGridWrap">
+          <div class="flag-grid" id="summaryFlagGrid">
           </div>
         </div>
+        <button type="button" class="summary-rec-seeall" id="summaryFlagSeeAllBtn" hidden>See all</button>
       </div>
 
       <aside>
@@ -2938,78 +2922,24 @@
             <span class="card-title">Preference weights</span>
             <span class="card-tag">AI</span>
           </div>
-          <div class="panel">
-            <div class="pref-row">
-              <div class="pref-label">Warm tones</div>
-              <div class="pref-bar"><div class="pref-bar-fill" style="width: 92%"></div></div>
-              <div class="pref-val">0.92</div>
-            </div>
-            <div class="pref-row">
-              <div class="pref-label">Handle-less</div>
-              <div class="pref-bar"><div class="pref-bar-fill" style="width: 88%"></div></div>
-              <div class="pref-val">0.88</div>
-            </div>
-            <div class="pref-row">
-              <div class="pref-label">Oak / wood</div>
-              <div class="pref-bar"><div class="pref-bar-fill" style="width: 81%"></div></div>
-              <div class="pref-val">0.81</div>
-            </div>
-            <div class="pref-row">
-              <div class="pref-label">Dark contrast</div>
-              <div class="pref-bar"><div class="pref-bar-fill" style="width: 68%"></div></div>
-              <div class="pref-val">0.68</div>
-            </div>
-            <div class="pref-row">
-              <div class="pref-label">Color accents</div>
-              <div class="pref-bar"><div class="pref-bar-fill" style="width: 54%"></div></div>
-              <div class="pref-val">0.54</div>
-            </div>
-            <div class="pref-row">
-              <div class="pref-label">Gloss finish</div>
-              <div class="pref-bar"><div class="pref-bar-fill warn" style="width: 8%"></div></div>
-              <div class="pref-val">0.08</div>
-            </div>
+          <div class="panel" id="summaryPrefPanel">
           </div>
         </section>
 
         <section class="card" style="margin-top: 16px;">
-          <div class="panel">
+          <div class="panel" id="summaryBudgetCard">
             <div class="budget-title">Budget signal</div>
-            <div class="budget-range"><span class="accent">€10k</span> — <span class="accent">€14k</span></div>
-            <div class="budget-signal">Inferred from positively flagged SKUs. She commented on maintenance cost twice, which suggests total-cost sensitivity rather than list-price only.</div>
+            <div class="budget-range" id="summaryBudgetRange"><span class="accent">—</span></div>
+            <div class="budget-signal" id="summaryBudgetSignal">When a budget is mentioned in key preferences, it is shown here.</div>
           </div>
         </section>
 
         <section class="card" style="margin-top: 16px;">
           <div class="card-head">
             <span class="card-title">Session timeline</span>
-            <span class="card-tag">12 events</span>
+            <span class="card-tag" id="summaryTimelineCount">0 events</span>
           </div>
-          <div class="panel">
-            <div class="timeline-item">
-              <div class="timeline-time">14:22</div>
-              <div class="timeline-event"><strong>Entered floor</strong> · device paired</div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">14:26</div>
-              <div class="timeline-event">Pin №1 · Kitchen A · positive</div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">14:33</div>
-              <div class="timeline-event">External ref imported · Pinterest</div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">14:41</div>
-              <div class="timeline-event">Pin №7 · Kitchen A · <strong>concern</strong></div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">14:43</div>
-              <div class="timeline-event"><strong>Approached by Lena V.</strong> · AR spawn ×4</div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">15:08</div>
-              <div class="timeline-event"><strong>Session ended</strong> · brochure emailed</div>
-            </div>
+          <div class="panel" id="summaryTimeline">
           </div>
         </section>
       </aside>
@@ -3017,11 +2947,11 @@
 
     <!-- CTA -->
     <div class="profile-cta" id="profileCta">
-      <div class="cta-icon">SM</div>
+      <div class="cta-icon" id="summaryCtaIcon">·</div>
       <div class="cta-content">
-        <div class="cta-eyebrow">Customer profile generated</div>
-        <div class="cta-title">Sylvan's profile is ready to review.</div>
-        <div class="cta-sub">12 spatial briefs from this visit are now folded into her lifetime profile across 3 sessions. Continuity signals updated.</div>
+        <div class="cta-eyebrow" id="summaryCtaEyebrow">Customer profile generated</div>
+        <div class="cta-title" id="summaryCtaTitle">When the visit summary is ready, the customer name appears here.</div>
+        <div class="cta-sub" id="summaryCtaSub">Key preferences and recommendations from this session sync from Supabase.</div>
       </div>
       <button class="cta-action" id="ctaToProfile">Open Customer Profile</button>
     </div>
@@ -3846,6 +3776,7 @@
       upsertBrief(normalizePin(pin, recommendationsByPin.get(pin.id) || []));
     });
     renderShowroomBriefs();
+    scheduleVisitSummarySync();
   }
 
   async function fetchPinById(pinId) {
@@ -3871,6 +3802,7 @@
     const inserted = upsertBrief(brief);
     renderShowroomBriefs();
     if (notifyNew && inserted) showToast('New spatial brief landed from SnapCloud');
+    scheduleVisitSummarySync();
   }
 
   function schedulePinRefresh(pinId, notifyNew = false, delay = 500) {
@@ -3923,6 +3855,1089 @@
       });
   }
 
+  // ===== Session summary (visit_summaries + realtime) — Session Summary view only =====
+  const visitSummaryState = {
+    row: null,
+    session: null,
+    customerName: '',
+    _pinCountForSession: null,
+    customerSessions: [],
+    activeSessionId: null,
+    pinsForTimeline: [],
+    _lastTrackedSummarySid: null,
+    recommendedRecs: null,
+    recommendedFilter: 'all',
+    recommendedExpanded: false
+  };
+  const SUMMARY_REC_PREVIEW = 6;
+  const SHOWROOM_FLOOR_LABEL = 'Kitchen A';
+  let visitSummarySyncTimer = null;
+
+  function getTrackedSessionId() {
+    const first = showroomState.briefs[0];
+    return first && first.sessionId ? first.sessionId : null;
+  }
+
+  function formatDurationMs(ms) {
+    if (ms == null || Number.isNaN(ms) || ms < 0) return '—';
+    const m = Math.round(ms / 60000);
+    if (m < 1) return '<1m';
+    if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    return h + 'h' + (rem ? ' ' + rem + 'm' : '');
+  }
+
+  function formatTimeHm(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(d);
+  }
+
+  function formatSessionEyebrow(session, generatedAt) {
+    if (!session || !session.started_at) {
+      if (generatedAt) {
+        return 'Session · ' + new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(generatedAt)) + ' · summary';
+      }
+      return 'Session';
+    }
+    const start = new Date(session.started_at);
+    const end = session.ended_at ? new Date(session.ended_at) : (generatedAt ? new Date(generatedAt) : null);
+    const day = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(start);
+    const t0 = formatTimeHm(session.started_at);
+    const t1 = end ? formatTimeHm(session.ended_at || generatedAt) : 'live';
+    let dur = '—';
+    if (end && session.started_at) {
+      dur = formatDurationMs(end.getTime() - start.getTime());
+    }
+    return 'Session · ' + day + ' · ' + t0 + (t1 !== '—' && t1 !== 'live' ? '–' + t1 : t1 === 'live' ? '' : '–' + t1) + (dur !== '—' ? ' · ' + dur : '');
+  }
+
+  function displayPreferenceValue(value) {
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value)) return value.map(v => displayPreferenceValue(v)).filter(Boolean).join(', ');
+    if (typeof value === 'object') return Object.values(value).join(', ');
+    return String(value);
+  }
+
+  const LEGACY_K_PREF_SKIP = new Set(['keywords', 'budget_signal', 'preference_weights']);
+
+  function getKeywordGroups(prefs) {
+    const empty = { pos: [], neg: [], neu: [], structured: false };
+    if (!prefs || typeof prefs !== 'object') return empty;
+    const k = prefs.keywords;
+    if (
+      k &&
+      typeof k === 'object' &&
+      (Array.isArray(k.positive_signals) ||
+        Array.isArray(k.concerns_rejections) ||
+        Array.isArray(k.context_constraints))
+    ) {
+      return {
+        pos: Array.isArray(k.positive_signals) ? k.positive_signals : [],
+        neg: Array.isArray(k.concerns_rejections) ? k.concerns_rejections : [],
+        neu: Array.isArray(k.context_constraints) ? k.context_constraints : [],
+        structured: true
+      };
+    }
+    const p = partitionKeyPreferences(prefs);
+    return { pos: p.pos, neg: p.neg, neu: p.neu, structured: false };
+  }
+
+  function keywordGroupMentionsCount(items) {
+    if (!Array.isArray(items) || !items.length) return 0;
+    return items.reduce((a, it) => a + (Number(it && it.count) > 0 ? Number(it.count) : 1), 0);
+  }
+
+  function formatKeywordGroupCount(items) {
+    const n = items.length;
+    const m = keywordGroupMentionsCount(items);
+    if (!n) return '0 items';
+    return n + ' keyword' + (n === 1 ? '' : 's') + ' · ' + m + ' mention' + (m === 1 ? '' : 's');
+  }
+
+  function partitionKeyPreferences(prefs) {
+    const out = { pos: [], neg: [], neu: [] };
+    if (!prefs || typeof prefs !== 'object') return out;
+    const negRe = /(concern|reject|fear|avoid|issue|problem|gloss|clinical|hospital|hate|negative|pain|worry)/i;
+    const posRe = /(love|like|style|color|room|feature|material|comfort|must_have|priority|positive|warm|liked|excited|ideal)/i;
+    for (const [key, value] of Object.entries(prefs)) {
+      if (LEGACY_K_PREF_SKIP.has(key)) continue;
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) continue;
+      const line = { key, text: String(key) + ': ' + displayPreferenceValue(value) };
+      const k = String(key);
+      if (negRe.test(k) || negRe.test(line.text)) {
+        out.neg.push(line);
+      } else if (posRe.test(k) || posRe.test(line.text)) {
+        out.pos.push(line);
+      } else {
+        out.neu.push(line);
+      }
+    }
+    if (!out.pos.length && !out.neg.length && out.neu.length) {
+      out.pos = out.neu.slice(0, Math.ceil(out.neu.length / 2));
+      out.neu = out.neu.slice(out.pos.length);
+    } else if (!out.pos.length && out.neg.length && out.neu.length) {
+      out.pos = out.neu;
+      out.neu = [];
+    }
+    return out;
+  }
+
+  function renderKeywordChips(list, structured) {
+    if (!list.length) return '<span class="kw-chip">—</span>';
+    if (structured && list[0] && (list[0].keyword != null || list[0].count != null)) {
+      return list
+        .map(item => {
+          const raw = item.keyword != null ? item.keyword : (item.text != null ? item.text : item);
+          const k = String(raw);
+          const c = item.count != null && item.count !== '' ? Number(item.count) : 1;
+          return (
+            '<span class="kw-chip">' + escapeHtml(k) + '<span class="kw-chip-count">' + (Number.isFinite(c) ? c : 1) + '</span></span>'
+          );
+        })
+        .join('');
+    }
+    return list
+      .map(
+        l =>
+          '<span class="kw-chip">' + escapeHtml(l.text != null ? l.text : String(l)) + '</span>'
+      )
+      .join('');
+  }
+
+  function buildPreferenceBarRows(prefs) {
+    if (!prefs || typeof prefs !== 'object') {
+      return '<div class="pref-row"><div class="pref-label">—</div><div class="pref-bar"><div class="pref-bar-fill" style="width: 0%"></div></div><div class="pref-val">—</div></div>';
+    }
+    if (Array.isArray(prefs.preference_weights) && prefs.preference_weights.length) {
+      const rows = prefs.preference_weights
+        .filter(w => w && (w.label != null || w.name != null))
+        .map(w => {
+          const label = String(w.label != null ? w.label : w.name);
+          const raw = w.weight;
+          const weight = Math.min(1, Math.max(0, typeof raw === 'number' && !Number.isNaN(raw) ? raw : Number(raw) || 0));
+          return { label, weight };
+        })
+        .sort((a, b) => b.weight - a.weight);
+      if (!rows.length) {
+        return '<div class="pref-row"><div class="pref-label">—</div><div class="pref-bar"><div class="pref-bar-fill" style="width: 0%"></div></div><div class="pref-val">—</div></div>';
+      }
+      return rows.map(({ label, weight }) => {
+        const warn = weight < 0.2 ? ' warn' : '';
+        return (
+          '<div class="pref-row">' +
+          '<div class="pref-label">' + escapeHtml(label) + '</div>' +
+          '<div class="pref-bar"><div class="pref-bar-fill' + warn + '" style="width: ' + Math.round(weight * 100) + '%"></div></div>' +
+          '<div class="pref-val">' + weight.toFixed(2) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    const entries = Object.entries(prefs)
+      .filter(([k, v]) => !LEGACY_K_PREF_SKIP.has(k) && (v == null || typeof v !== 'object' || Array.isArray(v)));
+    const withWeight = entries.map(([k, v], i) => {
+      const raw = v;
+      let w;
+      if (typeof raw === 'number' && !Number.isNaN(raw)) w = raw <= 1 ? raw : Math.min(1, raw / 100);
+      else w = 0.45 + ((i * 11 + k.length) % 45) / 100;
+      return { k, w: Math.min(1, Math.max(0.05, w)) };
+    });
+    withWeight.sort((a, b) => b.w - a.w);
+    return withWeight.slice(0, 6).map(({ k, w }) => {
+      const warn = /gloss|glossy|hospital|reject|concern/i.test(k) ? ' warn' : '';
+      return (
+        '<div class="pref-row">' +
+        '<div class="pref-label">' +
+        escapeHtml(String(k)) +
+        '</div>' +
+        '<div class="pref-bar"><div class="pref-bar-fill' + warn + '" style="width: ' + Math.round(w * 100) + '%"></div></div>' +
+        '<div class="pref-val">' + w.toFixed(2) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function flagCardClassForSentiment(s) {
+    const t = String(s || '').toLowerCase();
+    if (t === 'excited') return 'pos';
+    const c = sentimentClass(s);
+    return c === 'pos' ? 'pos' : c === 'neg' ? 'neg' : 'neu';
+  }
+
+  function isPlaceholderBudgetRange(str) {
+    if (str == null) return true;
+    const t = String(str).trim();
+    if (!t) return true;
+    const low = t.toLowerCase();
+    if (
+      low === 'not enough data' ||
+      low === 'n/a' ||
+      low === 'na' ||
+      low === '—' ||
+      low === '-' ||
+      low === 'unknown' ||
+      low.includes('not enough data') ||
+      low.includes('insufficient data')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function resolveHeroBudgetBand(prefs) {
+    const p = prefs && typeof prefs === 'object' ? prefs : {};
+    const bs = p.budget_signal && typeof p.budget_signal === 'object' ? p.budget_signal : null;
+    const fromNew = bs && bs.range != null ? String(bs.range).trim() : '';
+    const flat = displayPreferenceValue(p.budget || p.budget_max || p.price_range || '');
+    const raw = fromNew || flat;
+    if (isPlaceholderBudgetRange(raw)) {
+      return { html: '—', title: 'No price band inferred from this visit yet.' };
+    }
+    const display = raw.length > 22 ? raw.slice(0, 22) + '…' : raw;
+    return { html: '<span class="accent">' + escapeHtml(display) + '</span>', title: '' };
+  }
+
+  function resolveBudgetCardBlock(prefs) {
+    const p = prefs && typeof prefs === 'object' ? prefs : {};
+    const bs = p.budget_signal && typeof p.budget_signal === 'object' ? p.budget_signal : null;
+    const raw =
+      bs && bs.range != null
+        ? String(bs.range).trim()
+        : displayPreferenceValue(p.budget || p.budget_max || p.price_range);
+    const reasoning = bs && bs.reasoning != null ? String(bs.reasoning).trim() : '';
+    if (isPlaceholderBudgetRange(raw)) {
+      return {
+        rangeHtml: '—',
+        subtext: reasoning || 'We could not estimate a list-price band for this visit. Add one from your conversation when the customer is ready to talk numbers.',
+        isPlaceholder: true
+      };
+    }
+    return {
+      rangeHtml: '<span class="accent">' + escapeHtml(String(raw)) + '</span>',
+      subtext: reasoning || 'Inferred for this visit.',
+      isPlaceholder: false
+    };
+  }
+
+  function timelineSentimentWord(s) {
+    const t = String(s || '').toLowerCase();
+    if (t === 'concerned' || t.includes('concern')) return 'concern';
+    if (t === 'negative' || t === 'neg') return 'negative';
+    if (t === 'excited' || t === 'positive' || t.includes('pos')) return 'positive';
+    if (t === 'neutral' || t === 'neu') return 'neutral';
+    return t || 'noted';
+  }
+
+  function buildPinTimelineLine(index1, productName, sentWord) {
+    const raw = productName && String(productName).trim() ? String(productName).trim().slice(0, 80) : '';
+    const productPart = raw ? ' · ' + escapeHtml(raw) : ' · ' + escapeHtml('Unnamed product');
+    return (
+      'Pin №' + index1 + ' · ' + escapeHtml(SHOWROOM_FLOOR_LABEL) + productPart + ' · ' +
+      (sentWord === 'concern' ? '<strong>concern</strong>' : escapeHtml(sentWord))
+    );
+  }
+
+  async function fetchCropsForSession(sessionId) {
+    if (!supabaseClient || !sessionId) return [];
+    const { data, error } = await supabaseClient
+      .from('crops')
+      .select('id,created_at,title,image_url')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+    if (error) return [];
+    return data || [];
+  }
+
+  async function fetchARSpawnInfoForPinIds(pinIds) {
+    if (!supabaseClient || !pinIds || !pinIds.length) {
+      return { count: 0, lastAt: null };
+    }
+    const { data, error } = await supabaseClient
+      .from('ar_spawn_requests')
+      .select('id,created_at')
+      .in('pin_id', pinIds);
+    if (error || !data || !data.length) return { count: 0, lastAt: null };
+    const times = data
+      .map(x => (x.created_at ? new Date(x.created_at).getTime() : 0))
+      .filter(n => n > 0);
+    return {
+      count: data.length,
+      lastAt: times.length ? new Date(Math.max.apply(null, times)) : null
+    };
+  }
+
+  async function buildNarrativeTimelineHtmlAsync(session, pinsInSession, visitRow) {
+    const rows = [];
+    if (!session || !session.started_at) {
+      return '<div class="timeline-item"><div class="timeline-time">—</div><div class="timeline-event">No session start time in database.</div></div>';
+    }
+    const sorted = [...pinsInSession].sort(
+      (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+    );
+    const pinIds = sorted.map(p => p.id).filter(Boolean);
+    let crops = [];
+    let ar = { count: 0, lastAt: null };
+    if (session.id) {
+      [crops, ar] = await Promise.all([
+        fetchCropsForSession(session.id),
+        fetchARSpawnInfoForPinIds(pinIds)
+      ]);
+    }
+
+    const events = [];
+    events.push({
+      t: new Date(session.started_at).getTime(),
+      html:
+        '<div class="timeline-time">' + formatTimeHm(session.started_at) + '</div>' +
+        '<div class="timeline-event"><strong>Entered floor</strong> · device paired</div>'
+    });
+
+    sorted.forEach((p, i) => {
+      const t = p.createdAt ? new Date(p.createdAt).getTime() : 0;
+      if (!t) return;
+      const w = timelineSentimentWord(p.sentiment);
+      const line = buildPinTimelineLine(i + 1, p.detectedProduct, w);
+      events.push({
+        t,
+        html:
+          '<div class="timeline-time">' + formatTimeHm(p.createdAt) + '</div>' +
+          '<div class="timeline-event">' + line + '</div>'
+      });
+    });
+
+    for (const c of crops) {
+      const t = c.created_at ? new Date(c.created_at).getTime() : 0;
+      if (!t) continue;
+      const cap = c.title && String(c.title).trim() ? escapeHtml(c.title.trim()) : 'Pinterest';
+      events.push({
+        t,
+        html:
+          '<div class="timeline-time">' + formatTimeHm(c.created_at) + '</div>' +
+          '<div class="timeline-event">External ref imported · ' + cap + '</div>'
+      });
+    }
+
+    if (ar.count > 0) {
+      const at = ar.lastAt && !Number.isNaN(ar.lastAt.getTime()) ? ar.lastAt : (session.ended_at ? new Date(session.ended_at) : (visitRow && visitRow.generated_at ? new Date(visitRow.generated_at) : new Date()));
+      const t = at.getTime();
+      events.push({
+        t,
+        html:
+          '<div class="timeline-time">' + formatTimeHm(at.toISOString()) + '</div>' +
+          '<div class="timeline-event">Approached on floor · <strong>AR spawn</strong> ×' + ar.count + '</div>'
+      });
+    }
+
+    if (session.ended_at) {
+      events.push({
+        t: new Date(session.ended_at).getTime(),
+        html:
+          '<div class="timeline-time">' + formatTimeHm(session.ended_at) + '</div>' +
+          '<div class="timeline-event"><strong>Session ended</strong> · visit closed</div>'
+      });
+    } else if (visitRow && visitRow.generated_at) {
+      events.push({
+        t: new Date(visitRow.generated_at).getTime(),
+        html:
+          '<div class="timeline-time">' + formatTimeHm(visitRow.generated_at) + '</div>' +
+          '<div class="timeline-event">Summary generated for handoff</div>'
+      });
+    }
+
+    events.sort((a, b) => a.t - b.t);
+    if (!events.length) {
+      return '<div class="timeline-item"><div class="timeline-time">—</div><div class="timeline-event">No timeline data yet</div></div>';
+    }
+    return events.map(e => '<div class="timeline-item">' + e.html + '</div>').join('');
+  }
+
+  async function loadProductsByIds(idSet) {
+    const ids = [...idSet].filter(n => n != null && n !== '');
+    if (!ids.length || !supabaseClient) return new Map();
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('id,name,sku,category,price,image_url')
+      .in('id', ids);
+    if (error) {
+      console.warn('visit summary products', error);
+      return new Map();
+    }
+    return new Map((data || []).map(p => [Number(p.id), p]));
+  }
+
+  async function loadPinSentimentsByIds(pinUuids) {
+    const ids = [...new Set(pinUuids)].filter(Boolean);
+    if (!ids.length || !supabaseClient) return new Map();
+    const { data, error } = await supabaseClient.from('pins').select('id,sentiment').in('id', ids);
+    if (error) return new Map();
+    return new Map((data || []).map(p => [p.id, p.sentiment]));
+  }
+
+  function getPinSentimentForRec(pinSentiment, pinId) {
+    if (!pinId) return 'neutral';
+    return (
+      pinSentiment.get(pinId) || pinSentiment.get(String(pinId)) || 'neutral'
+    );
+  }
+
+  function recSentimentBucket(sent) {
+    const t = String(sent || '').toLowerCase();
+    if (t === 'excited' || t === 'positive' || t.includes('positive')) return 'pos';
+    if (t === 'concerned' || t === 'negative' || t === 'neg' || t.includes('concern') || t.includes('negative')) {
+      return 'neg';
+    }
+    return 'neu';
+  }
+
+  function filterRecommendationsBySentiment(recs, pinSent, filter) {
+    if (filter === 'all' || !Array.isArray(recs)) return recs || [];
+    return recs.filter(r => {
+      const s = getPinSentimentForRec(pinSent, r.pin_id);
+      return recSentimentBucket(s) === filter;
+    });
+  }
+
+  function countRecommendationBuckets(recs, pinSent) {
+    const out = { pos: 0, neg: 0, neu: 0 };
+    for (const r of recs || []) {
+      const s = getPinSentimentForRec(pinSent, r.pin_id);
+      out[recSentimentBucket(s)]++;
+    }
+    return out;
+  }
+
+  function flagSentimentBadgeText(sent) {
+    const b = recSentimentBucket(sent);
+    if (b === 'pos') return 'Positive';
+    if (b === 'neg') return 'Concern';
+    return 'Neutral';
+  }
+
+  function renderFlagGridCardsHtml(recommended, productsById, pinSentiment) {
+    if (!Array.isArray(recommended) || !recommended.length) {
+      return '<p style="color:var(--on-surface-variant);font-size:14px;">No products in this view.</p>';
+    }
+    const sorted = [...recommended].sort((a, b) => Number(b.match_score) - Number(a.match_score));
+    return sorted
+      .map(rec => {
+        const pid = rec.product_id;
+        const p = productsById.get(pid) || productsById.get(Number(pid)) || {};
+        const name = p.name || 'Product #' + String(pid);
+        const sku = p.sku || 'SKU pending';
+        const cat = p.category || '';
+        const price = p.price ? formatMoney(p.price) : '';
+        const skuLine = [sku, cat, price].filter(Boolean).join(' · ');
+        const quote = rec.match_reason || 'Recommended for this visit.';
+        const sent = getPinSentimentForRec(pinSentiment, rec.pin_id);
+        const c = flagCardClassForSentiment(sent);
+        const badge = flagSentimentBadgeText(sent);
+        const img = p.image_url
+          ? '<img class="match-photo" src="' + escapeHtml(p.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;" />'
+          : fallbackProductSvg();
+        return (
+          '<div class="flag-card ' + c + '">' +
+          '<span class="flag-sentiment">' + escapeHtml(badge) + '</span>' +
+          '<div class="flag-img">' + img + '</div>' +
+          '<div class="flag-body">' +
+          '<div class="flag-name">' + escapeHtml(name) + '</div>' +
+          '<div class="flag-sku">' + escapeHtml(skuLine) + '</div>' +
+          '<div class="flag-quote">"' + escapeHtml(quote) + '"</div>' +
+          '</div></div>'
+        );
+      })
+      .join('');
+  }
+
+  function renderSummaryRecommendationsView() {
+    const cache = visitSummaryState.recommendedRecs;
+    const grid = document.getElementById('summaryFlagGrid');
+    const meta = document.getElementById('summaryFlagMeta');
+    const countEl = document.getElementById('summaryFlagCount');
+    const wrap = document.getElementById('summaryFlagGridWrap');
+    const seeBtn = document.getElementById('summaryFlagSeeAllBtn');
+    const filters = document.getElementById('summaryRecFilters');
+    if (!grid) return;
+    if (!cache || !cache.recs || !cache.recs.length) {
+      grid.innerHTML =
+        '<p style="color:var(--on-surface-variant);font-size:14px;">No recommendations in visit_summaries yet.</p>';
+      if (meta) meta.textContent = '';
+      if (countEl) countEl.textContent = '—';
+      if (filters) filters.hidden = true;
+      if (seeBtn) seeBtn.hidden = true;
+      if (wrap) wrap.classList.remove('expanded');
+      return;
+    }
+    if (filters) filters.hidden = false;
+    const { recs, productsById, pinSent } = cache;
+    const filter = visitSummaryState.recommendedFilter || 'all';
+    const buckets = countRecommendationBuckets(recs, pinSent);
+    if (meta) {
+      meta.textContent =
+        buckets.pos +
+        ' positive · ' +
+        buckets.neg +
+        ' concern · ' +
+        buckets.neu +
+        ' neutral · ' +
+        recs.length +
+        ' total';
+    }
+    const list = filterRecommendationsBySentiment(recs, pinSent, filter);
+    const sorted = [...list].sort((a, b) => Number(b.match_score) - Number(a.match_score));
+    const n = sorted.length;
+    const expanded = visitSummaryState.recommendedExpanded;
+    const showCap = !expanded && n > SUMMARY_REC_PREVIEW;
+    const toShow = showCap ? sorted.slice(0, SUMMARY_REC_PREVIEW) : sorted;
+    if (n === 0) {
+      grid.innerHTML =
+        '<p style="color:var(--on-surface-variant);font-size:14px;">No products in this category for this visit. Try <strong>All</strong> to see every match.</p>';
+    } else {
+      grid.innerHTML = renderFlagGridCardsHtml(toShow, productsById, pinSent);
+    }
+    if (countEl) {
+      if (n === 0) {
+        countEl.textContent = '0';
+      } else if (filter === 'all') {
+        countEl.textContent =
+          toShow.length + (showCap ? ' of ' + n + ' shown' : ' products');
+      } else {
+        const label = filter === 'pos' ? 'positive' : filter === 'neg' ? 'concern' : 'neutral';
+        countEl.textContent = n + ' · ' + label;
+      }
+    }
+    if (seeBtn) {
+      if (n > SUMMARY_REC_PREVIEW) {
+        seeBtn.hidden = false;
+        if (visitSummaryState.recommendedExpanded) {
+          seeBtn.textContent = 'Show less';
+        } else {
+          seeBtn.textContent = 'See all ' + n + ' product' + (n === 1 ? '' : 's');
+        }
+      } else {
+        seeBtn.hidden = true;
+      }
+    }
+    if (wrap) wrap.classList.toggle('expanded', Boolean(visitSummaryState.recommendedExpanded));
+  }
+
+  function applySessionSummaryToDom(sessionId) {
+    const v = visitSummaryState.row;
+    const sess = visitSummaryState.session;
+    const name = visitSummaryState.customerName || 'Customer';
+    const kgroups = getKeywordGroups(v && v.key_preferences);
+    const parts = { pos: kgroups.pos, neg: kgroups.neg, neu: kgroups.neu };
+    const kStructured = kgroups.structured;
+    let briefsN = 0;
+
+    if (v && (v.session_id || sessionId)) {
+      const summaryText = (v.summary_text && v.summary_text.trim()) || 'No summary text yet for this visit.';
+      document.getElementById('summaryHeroEyebrow').textContent = 'Customer brief · from pins';
+      document.getElementById('summaryHeroPersona').innerHTML =
+        'Visit with <span class="accent">' + escapeHtml(name) + '.</span>';
+      document.getElementById('summaryHeroTagline').textContent = summaryText;
+
+      const pinCount = showroomState.briefs.filter(b => b.sessionId === (sessionId || v.session_id)).length;
+      const totalPins = visitSummaryState._pinCountForSession;
+      briefsN = totalPins != null ? totalPins : pinCount;
+      document.getElementById('summaryFactBriefs').textContent = String(briefsN || '0');
+
+      let timeFloor = '—';
+      if (sess && sess.started_at) {
+        const t0 = new Date(sess.started_at).getTime();
+        const t1 = sess.ended_at
+          ? new Date(sess.ended_at).getTime()
+          : v && v.generated_at
+            ? new Date(v.generated_at).getTime()
+            : Date.now();
+        timeFloor = formatDurationMs(t1 - t0);
+      }
+      document.getElementById('summaryFactTime').textContent = timeFloor;
+
+      const prefs = (v.key_preferences && typeof v.key_preferences === 'object' ? v.key_preferences : {}) || {};
+      const band = resolveHeroBudgetBand(prefs);
+      const midEl = document.getElementById('summaryFactMidpoint');
+      if (midEl) {
+        midEl.innerHTML = band.html;
+        midEl.title = band.title || '';
+      }
+      const intentEl = document.getElementById('summaryFactIntent');
+      const recs = v.recommended_products;
+      if (Array.isArray(recs) && recs.length) {
+        const sum = recs.reduce((a, b) => a + Number(b.match_score || 0), 0);
+        const avg = sum / recs.length;
+        intentEl.innerHTML = Math.round(avg * 100) + '<span style="font-size: 18px; opacity: 0.6;">%</span>';
+      } else {
+        intentEl.textContent = '—';
+      }
+
+      document.getElementById('summaryKeywordChipsPos').innerHTML = renderKeywordChips(parts.pos, kStructured);
+      document.getElementById('summaryKeywordChipsNeg').innerHTML = renderKeywordChips(parts.neg, kStructured);
+      document.getElementById('summaryKeywordChipsNeu').innerHTML = renderKeywordChips(parts.neu, kStructured);
+      document.getElementById('summaryKwPosCount').textContent = kStructured
+        ? formatKeywordGroupCount(parts.pos)
+        : parts.pos.length + ' items';
+      document.getElementById('summaryKwNegCount').textContent = kStructured
+        ? formatKeywordGroupCount(parts.neg)
+        : parts.neg.length + ' items';
+      document.getElementById('summaryKwNeuCount').textContent = kStructured
+        ? formatKeywordGroupCount(parts.neu)
+        : parts.neu.length + ' items';
+      const emptyPrefs =
+        !parts.pos.length && !parts.neg.length && !parts.neu.length;
+      document.getElementById('summaryKeywordGroupPos').style.display = emptyPrefs ? 'none' : '';
+      if (emptyPrefs) {
+        const np = document.getElementById('summaryKeywordChipsNeu');
+        const neuCnt = document.getElementById('summaryKwNeuCount');
+        if (neuCnt) neuCnt.textContent = '0 items';
+        np.innerHTML = '<span class="kw-chip">No key preferences yet</span>';
+        document.getElementById('summaryKeywordGroupNeu').style.display = '';
+        document.getElementById('summaryKeywordGroupPos').style.display = 'none';
+        document.getElementById('summaryKeywordGroupNeg').style.display = 'none';
+      } else {
+        document.getElementById('summaryKeywordGroupNeg').style.display = parts.neg.length ? '' : 'none';
+        document.getElementById('summaryKeywordGroupPos').style.display = parts.pos.length ? '' : 'none';
+        document.getElementById('summaryKeywordGroupNeu').style.display = parts.neu.length ? '' : 'none';
+      }
+
+    } else {
+      document.getElementById('summaryHeroEyebrow').textContent = 'Visit brief';
+      document.getElementById('summaryHeroPersona').innerHTML = 'The <span class="accent">summary pending.</span>';
+      document.getElementById('summaryHeroTagline').textContent =
+        'End the session in Spectacles to run the visit-summaries edge function. As soon as the row is written, this view updates over Realtime.';
+      const midE = document.getElementById('summaryFactMidpoint');
+      if (midE) {
+        midE.innerHTML = '—';
+        midE.removeAttribute('title');
+      }
+    }
+
+    if (v) {
+      (async () => {
+        const recs = Array.isArray(v.recommended_products) ? v.recommended_products : [];
+        const ids = new Set(recs.map(r => r.product_id).filter(Boolean));
+        const pinIds = recs.map(r => r.pin_id);
+        const [productsById, pinSent] = await Promise.all([
+          loadProductsByIds(ids),
+          loadPinSentimentsByIds(pinIds)
+        ]);
+        visitSummaryState.recommendedRecs = { recs, productsById, pinSent };
+        visitSummaryState.recommendedFilter = 'all';
+        visitSummaryState.recommendedExpanded = false;
+        const fil = document.getElementById('summaryRecFilters');
+        if (fil) {
+          fil.querySelectorAll('.summary-rec-chip').forEach(c => {
+            const on = c.dataset.filter === 'all';
+            c.classList.toggle('on', on);
+            c.setAttribute('aria-selected', on ? 'true' : 'false');
+          });
+        }
+        const w = document.getElementById('summaryFlagGridWrap');
+        if (w) w.classList.remove('expanded');
+        renderSummaryRecommendationsView();
+        const pref = document.getElementById('summaryPrefPanel');
+        if (pref) pref.innerHTML = buildPreferenceBarRows(v.key_preferences);
+        const bRange = document.getElementById('summaryBudgetRange');
+        const bSig = document.getElementById('summaryBudgetSignal');
+        const prefs2 = (v.key_preferences && typeof v.key_preferences === 'object' ? v.key_preferences : {}) || {};
+        const budgetBlock = resolveBudgetCardBlock(prefs2);
+        if (bRange && bSig) {
+          bRange.innerHTML = budgetBlock.isPlaceholder
+            ? '<span class="accent" title="Not estimated for this visit">—</span>'
+            : budgetBlock.rangeHtml;
+          bSig.textContent = budgetBlock.subtext;
+        }
+        const pinsSess =
+          visitSummaryState.pinsForTimeline && visitSummaryState.pinsForTimeline.length
+            ? visitSummaryState.pinsForTimeline
+            : showroomState.briefs.filter(b => b.sessionId === (sessionId || (v && v.session_id)));
+        const tEl = document.getElementById('summaryTimeline');
+        const tTag = document.getElementById('summaryTimelineCount');
+        if (tEl) {
+          tEl.innerHTML = await buildNarrativeTimelineHtmlAsync(sess, pinsSess, v);
+        }
+        if (tTag) {
+          const tmp = document.createElement('div');
+          tmp.innerHTML = tEl ? tEl.innerHTML : '';
+          const n = tmp.querySelectorAll('.timeline-item').length;
+          tTag.textContent = n + ' events';
+        }
+      })();
+    } else {
+      visitSummaryState.recommendedRecs = null;
+      visitSummaryState.recommendedFilter = 'all';
+      visitSummaryState.recommendedExpanded = false;
+      const fMeta = document.getElementById('summaryFlagMeta');
+      if (fMeta) fMeta.textContent = '';
+      const fils = document.getElementById('summaryRecFilters');
+      if (fils) fils.hidden = true;
+      const sBtn = document.getElementById('summaryFlagSeeAllBtn');
+      if (sBtn) sBtn.hidden = true;
+      const wRap = document.getElementById('summaryFlagGridWrap');
+      if (wRap) wRap.classList.remove('expanded');
+      const grid = document.getElementById('summaryFlagGrid');
+      if (grid) {
+        grid.innerHTML =
+          '<p style="color:var(--on-surface-variant);font-size:14px;">No visit summary in Supabase for this session yet.</p>';
+      }
+      const pref = document.getElementById('summaryPrefPanel');
+      if (pref) pref.innerHTML = buildPreferenceBarRows(null);
+      const tEl = document.getElementById('summaryTimeline');
+      const tTag = document.getElementById('summaryTimelineCount');
+      if (tEl) tEl.innerHTML = '';
+      if (tTag) tTag.textContent = '0 events';
+    }
+
+    const initial = (name && name[0] ? name[0].toUpperCase() : '?');
+    const ctaI = document.getElementById('summaryCtaIcon');
+    if (ctaI) ctaI.textContent = initial;
+    document.getElementById('summaryCtaTitle').textContent = v
+      ? name + "'s profile is ready to review."
+      : 'When the visit ends, the summary will appear here.';
+    document.getElementById('summaryCtaSub').textContent = v
+      ? (String(briefsN || 0) + ' spatial briefs in this session (tracked from pins). Key preferences and recommendations are synced from Supabase.')
+      : 'Waiting for visit_summaries from the edge function.';
+    document.getElementById('summaryReadyLabel').innerHTML =
+      v
+        ? 'Profile generated · <strong>ready to share</strong>'
+        : 'Waiting for visit · <strong>summary pipeline</strong>';
+  }
+
+  async function fetchSessionRow(sessionId) {
+    if (!supabaseClient || !sessionId) return null;
+    const { data, error } = await supabaseClient
+      .from('sessions')
+      .select('id,started_at,ended_at,status,customer_id')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (error) {
+      console.warn('sessions fetch', error);
+      return null;
+    }
+    return data;
+  }
+
+  async function fetchCustomerName(customerId) {
+    if (!supabaseClient || !customerId) return '';
+    const { data, error } = await supabaseClient.from('customers').select('name').eq('id', customerId).maybeSingle();
+    if (error || !data) return '';
+    return data.name || '';
+  }
+
+  async function fetchPinCountForSession(sessionId) {
+    if (!supabaseClient || !sessionId) return null;
+    const { count, error } = await supabaseClient
+      .from('pins')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
+    if (error) return null;
+    return count;
+  }
+
+  async function fetchPinsForSessionForTimeline(sessionId) {
+    if (!supabaseClient || !sessionId) return [];
+    const { data, error } = await supabaseClient
+      .from('pins')
+      .select('id,created_at,detected_product,sentiment,session_id')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+    if (error) {
+      console.warn('pins for timeline', error);
+      return [];
+    }
+    return (data || []).map(p => ({
+      id: p.id,
+      sessionId: p.session_id,
+      detectedProduct: p.detected_product,
+      sentiment: p.sentiment,
+      createdAt: p.created_at
+    }));
+  }
+
+  async function fetchCustomerVisitList(customerId) {
+    if (!supabaseClient || !customerId) return [];
+    const { data, error } = await supabaseClient
+      .from('visit_summaries')
+      .select('session_id,generated_at')
+      .eq('customer_id', customerId)
+      .order('generated_at', { ascending: false });
+    if (error) {
+      console.warn('customer visit_summaries', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  function formatSessionTabLabel(iso) {
+    if (!iso) return 'Visit';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return 'Visit';
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(d);
+  }
+
+  function renderSessionSummaryTabs() {
+    const wrap = document.getElementById('summarySessionTabsWrap');
+    const row = document.getElementById('summarySessionTabsRow');
+    if (!wrap || !row) return;
+    const list = visitSummaryState.customerSessions || [];
+    if (list.length === 0) {
+      wrap.hidden = true;
+      row.innerHTML = '';
+      return;
+    }
+    wrap.hidden = false;
+    const tracked = getTrackedSessionId();
+    row.innerHTML = list
+      .map(s => {
+        const isActive = String(visitSummaryState.activeSessionId) === String(s.session_id);
+        const isCurrentFloor = tracked && String(tracked) === String(s.session_id);
+        const sub = isCurrentFloor ? ' · current' : '';
+        return (
+          '<button type="button" role="tab" class="summary-session-tab' + (isActive ? ' active' : '') + '" ' +
+          'data-session-id="' + escapeHtml(s.session_id) + '" ' +
+          'aria-selected="' + (isActive ? 'true' : 'false') + '">' +
+          escapeHtml(formatSessionTabLabel(s.generated_at) + sub) +
+          '</button>'
+        );
+      })
+      .join('');
+    row.querySelectorAll('.summary-session-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-session-id');
+        if (id) loadSessionSummaryById(id).catch(e => console.warn(e));
+      });
+    });
+  }
+
+  async function loadSessionSummaryById(sessionId) {
+    if (!supabaseClient || !sessionId) return;
+    const [vs, sessionRow, pinCount, pinList] = await Promise.all([
+      fetchVisitSummaryForSession(sessionId),
+      fetchSessionRow(sessionId),
+      fetchPinCountForSession(sessionId),
+      fetchPinsForSessionForTimeline(sessionId)
+    ]);
+    visitSummaryState.activeSessionId = sessionId;
+    visitSummaryState.row = vs.row;
+    visitSummaryState.session = sessionRow;
+    if (vs.customerName) visitSummaryState.customerName = vs.customerName;
+    visitSummaryState._pinCountForSession = pinCount;
+    visitSummaryState.pinsForTimeline = pinList;
+    if (vs.row && vs.row.customer_id) {
+      visitSummaryState.customerSessions = await fetchCustomerVisitList(vs.row.customer_id);
+    }
+    renderSessionSummaryTabs();
+    applySessionSummaryToDom(sessionId);
+    if (document.getElementById('mode-summary').classList.contains('active')) {
+      applySummaryViewHeaders();
+    }
+  }
+
+  async function fetchVisitSummaryForSession(sessionId) {
+    if (!supabaseClient || !sessionId) return { row: null, customerName: '' };
+    const { data, error } = await supabaseClient
+      .from('visit_summaries')
+      .select('id,session_id,customer_id,summary_text,key_preferences,recommended_products,generated_at')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    if (error) {
+      console.warn('visit_summaries', error);
+      return { row: null, customerName: '' };
+    }
+    if (!data) return { row: null, customerName: '' };
+    let name = '';
+    if (data.customer_id) {
+      name = await fetchCustomerName(data.customer_id);
+    }
+    return { row: data, customerName: name };
+  }
+
+  async function syncVisitSummaryForTrackedSession() {
+    if (!supabaseClient) return;
+    const sid = getTrackedSessionId();
+    if (!sid) {
+      visitSummaryState.row = null;
+      visitSummaryState.session = null;
+      visitSummaryState.customerName = '';
+      visitSummaryState._pinCountForSession = null;
+      visitSummaryState.pinsForTimeline = [];
+      visitSummaryState.customerSessions = [];
+      visitSummaryState.activeSessionId = null;
+      visitSummaryState._lastTrackedSummarySid = null;
+      updateSummaryTabAvailability();
+      renderSessionSummaryTabs();
+      if (document.getElementById('mode-summary').classList.contains('active')) {
+        applySessionSummaryToDom(null);
+      }
+      return;
+    }
+
+    const cidFromBrief = showroomState.briefs[0] && showroomState.briefs[0].customerId;
+    const viewingOther =
+      visitSummaryState.activeSessionId &&
+      String(visitSummaryState.activeSessionId) !== String(sid);
+
+    let sessionsList = [];
+    if (cidFromBrief) {
+      sessionsList = await fetchCustomerVisitList(cidFromBrief);
+    }
+    visitSummaryState.customerSessions = sessionsList;
+
+    if (String(visitSummaryState._lastTrackedSummarySid || '') !== String(sid)) {
+      if (!viewingOther) {
+        visitSummaryState.activeSessionId = sid;
+      }
+    }
+    visitSummaryState._lastTrackedSummarySid = sid;
+
+    renderSessionSummaryTabs();
+
+    if (viewingOther) {
+      updateSummaryTabAvailability();
+      return;
+    }
+
+    const [vs, sessionRow, pinCount, pinList] = await Promise.all([
+      fetchVisitSummaryForSession(sid),
+      fetchSessionRow(sid),
+      fetchPinCountForSession(sid),
+      fetchPinsForSessionForTimeline(sid)
+    ]);
+    visitSummaryState.row = vs.row;
+    visitSummaryState.session = sessionRow;
+    visitSummaryState.customerName = vs.customerName;
+    visitSummaryState._pinCountForSession = pinCount;
+    visitSummaryState.pinsForTimeline = pinList;
+    visitSummaryState.activeSessionId = sid;
+
+    if (vs.row && vs.row.customer_id) {
+      const byCustomer = await fetchCustomerVisitList(vs.row.customer_id);
+      visitSummaryState.customerSessions = byCustomer;
+      renderSessionSummaryTabs();
+    }
+
+    updateSummaryTabAvailability();
+    applySessionSummaryToDom(sid);
+  }
+
+  function scheduleVisitSummarySync() {
+    clearTimeout(visitSummarySyncTimer);
+    visitSummarySyncTimer = setTimeout(() => {
+      syncVisitSummaryForTrackedSession().catch(e => console.warn(e));
+    }, 500);
+  }
+
+  function updateSummaryTabAvailability() {
+    const summarySeg = document.getElementById('summarySeg');
+    if (!summarySeg) return;
+    const hasAnySummary = visitSummaryState.row && visitSummaryState.row.session_id;
+    const hasPastVisits = visitSummaryState.customerSessions && visitSummaryState.customerSessions.length > 0;
+    if (hasAnySummary || hasPastVisits) {
+      summarySeg.classList.remove('disabled');
+      summarySeg.classList.add('ready');
+    } else if (sessionEnded) {
+      summarySeg.classList.remove('disabled');
+      summarySeg.classList.add('ready');
+    } else {
+      summarySeg.classList.add('disabled');
+      summarySeg.classList.remove('ready');
+    }
+  }
+
+  function applySummaryViewHeaders() {
+    const v = visitSummaryState.row;
+    const sess = visitSummaryState.session;
+    const name = visitSummaryState.customerName || 'Customer';
+    if (v) {
+      liveEyebrow.innerHTML = formatSessionEyebrow(sess, v.generated_at);
+      liveTitle.textContent = 'After ' + name + ' left the floor';
+      const briefsN = visitSummaryState._pinCountForSession;
+      const isPosNote = s =>
+        sentimentClass(s) === 'pos' || String(s || '').toLowerCase() === 'excited';
+      const pinSource =
+        visitSummaryState.pinsForTimeline && visitSummaryState.pinsForTimeline.length
+          ? visitSummaryState.pinsForTimeline
+          : showroomState.briefs.filter(b => b.sessionId === v.session_id);
+      const pos = pinSource.filter(b => isPosNote(b.sentiment)).length;
+      const neg = pinSource.filter(b => sentimentClass(b.sentiment) === 'neg').length;
+      const neu = pinSource.filter(
+        b => !isPosNote(b.sentiment) && sentimentClass(b.sentiment) === 'neu'
+      ).length;
+      liveMeta.innerHTML =
+        '<strong>' + String(briefsN != null ? briefsN : pinSource.length) + ' spatial briefs</strong> ' + pos + ' positive · ' + neg + ' concerns · ' + neu + ' neutral';
+    } else {
+      liveEyebrow.innerHTML = 'Session (demo) · not saved yet';
+      liveTitle.textContent = 'After the customer left the floor';
+      liveMeta.innerHTML = '<strong>—</strong> connect Spectacles to load visit_summaries';
+    }
+  }
+
+  function switchToSessionSummaryView() {
+    const summarySeg = document.getElementById('summarySeg');
+    if (!summarySeg) return;
+    if (summarySeg.classList.contains('disabled')) return;
+    segs.forEach(s => s.classList.remove('on', 'ready'));
+    summarySeg.classList.add('on', 'ready');
+    Object.values(modes).forEach(m => m.classList.remove('active'));
+    modes.summary.classList.add('active');
+    applySessionSummaryToDom(visitSummaryState.activeSessionId || (visitSummaryState.row && visitSummaryState.row.session_id) || getTrackedSessionId());
+    applySummaryViewHeaders();
+  }
+
+  function subscribeToVisitSummaries() {
+    if (!supabaseClient) return;
+    supabaseClient
+      .channel('visit-summaries')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visit_summaries' }, handleVisitSummaryRealtime)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'visit_summaries' }, handleVisitSummaryRealtime)
+      .subscribe();
+  }
+
+  function handleVisitSummaryRealtime(payload) {
+    const row = payload.new;
+    if (!row || !row.session_id) return;
+    const tracked = getTrackedSessionId();
+    if (!tracked || String(tracked) !== String(row.session_id)) {
+      return;
+    }
+    const viewingOther =
+      visitSummaryState.activeSessionId &&
+      String(visitSummaryState.activeSessionId) !== String(tracked);
+    (async () => {
+      try {
+        if (row.customer_id) {
+          visitSummaryState.customerSessions = await fetchCustomerVisitList(row.customer_id);
+          renderSessionSummaryTabs();
+        }
+        if (viewingOther) {
+          updateSummaryTabAvailability();
+          return;
+        }
+        visitSummaryState.row = row;
+        visitSummaryState.customerName = row.customer_id ? await fetchCustomerName(row.customer_id) : '';
+        visitSummaryState.session = await fetchSessionRow(row.session_id);
+        const [pc, pinList] = await Promise.all([
+          fetchPinCountForSession(row.session_id),
+          fetchPinsForSessionForTimeline(row.session_id)
+        ]);
+        visitSummaryState._pinCountForSession = pc;
+        visitSummaryState.pinsForTimeline = pinList;
+        visitSummaryState.activeSessionId = row.session_id;
+        updateSummaryTabAvailability();
+        applySessionSummaryToDom(row.session_id);
+        switchToSessionSummaryView();
+        showToast('Session summary is ready');
+      } catch (e) {
+        console.warn('visit_summaries realtime', e);
+      }
+    })();
+  }
   segs.forEach(seg => {
     seg.addEventListener('click', () => {
       if (seg.classList.contains('disabled')) return;
@@ -3933,9 +4948,14 @@
       modes[mode].classList.add('active');
 
       if (mode === 'summary') {
-        liveEyebrow.innerHTML = 'Session · 23 Apr · 14:22–15:08 · 46 min';
-        liveTitle.textContent = 'After Sylvan left the floor';
-        liveMeta.innerHTML = '<strong>12 spatial briefs</strong>7 positive · 3 concerns · 2 neutral<br>3 external references · 4 AR spawns';
+        (async () => {
+          if (!visitSummaryState.row && visitSummaryState.customerSessions && visitSummaryState.customerSessions.length) {
+            await loadSessionSummaryById(visitSummaryState.customerSessions[0].session_id);
+          } else {
+            applySessionSummaryToDom(visitSummaryState.activeSessionId || getTrackedSessionId());
+          }
+          applySummaryViewHeaders();
+        })();
       } else {
         updateLiveHeader();
       }
@@ -3961,10 +4981,10 @@
       liveSeg.classList.add('on');
       Object.values(modes).forEach(m => m.classList.remove('active'));
       modes.live.classList.add('active');
+      updateSummaryTabAvailability();
     } else {
       sessionEnded = true;
-      summarySeg.classList.remove('disabled');
-      summarySeg.classList.add('ready');
+      updateSummaryTabAvailability();
       liveSeg.classList.remove('live-mode');
       statusMeta.textContent = 'Ended 15:08 · 46m';
       endBtn.innerHTML = '↺ Reset demo';
@@ -4145,6 +5165,36 @@
     });
   }
 
+  (function initSummaryRecommendationUi() {
+    const filters = document.getElementById('summaryRecFilters');
+    if (filters) {
+      filters.addEventListener('click', e => {
+        const chip = e.target.closest('.summary-rec-chip');
+        if (!chip) return;
+        const nf = chip.dataset.filter;
+        if (!nf || !visitSummaryState.recommendedRecs) return;
+        visitSummaryState.recommendedFilter = nf;
+        visitSummaryState.recommendedExpanded = false;
+        const w = document.getElementById('summaryFlagGridWrap');
+        if (w) w.classList.remove('expanded');
+        filters.querySelectorAll('.summary-rec-chip').forEach(c => {
+          const on = c.dataset.filter === nf;
+          c.classList.toggle('on', on);
+          c.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        renderSummaryRecommendationsView();
+      });
+    }
+    const seeBtn = document.getElementById('summaryFlagSeeAllBtn');
+    if (seeBtn) {
+      seeBtn.addEventListener('click', () => {
+        if (!visitSummaryState.recommendedRecs) return;
+        visitSummaryState.recommendedExpanded = !visitSummaryState.recommendedExpanded;
+        renderSummaryRecommendationsView();
+      });
+    }
+  })();
+
   loadInitialPins().catch(error => {
     console.error(error);
     if (noteFeed) {
@@ -4152,6 +5202,7 @@
     }
   });
   subscribeToPins();
+  subscribeToVisitSummaries();
 </script>
 
 </body>
