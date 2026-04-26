@@ -3998,24 +3998,43 @@
     if (!supabaseClient) throw new Error('Supabase client failed to load.');
 
     // This row is the handoff from the web portal to the Spectacles app.
-    // Spectacles listens for pending requests, downloads the GLB, and spawns it.
+    // Two-stage flow:
+    //   1. INSERT with status='pending_conversion' and original_model_3d_url=<vendor URL>.
+    //      The vendor GLB is often Draco-compressed (e.g. IKEA dimma) and the
+    //      Lens Studio runtime cannot load that directly without crashing.
+    //   2. Invoke the `convert-glb` edge function. It downloads the source,
+    //      strips Draco compression, uploads the plain GLB to the `glb-cache`
+    //      Storage bucket, and updates this row with model_3d_url + status='pending'.
+    //   3. Spectacles polls for status='pending' rows and instantiates the
+    //      converted GLB.
     const request = {
       id: crypto.randomUUID(),
       pin_id: card.dataset.pinId,
       product_id: Number(card.dataset.productId),
-      model_3d_url: card.dataset.modelUrl,
-      status: 'pending'
+      original_model_3d_url: card.dataset.modelUrl,
+      status: 'pending_conversion'
     };
 
-    if (!request.pin_id || !request.product_id || !request.model_3d_url) {
+    if (!request.pin_id || !request.product_id || !request.original_model_3d_url) {
       throw new Error('Missing pin, product, or model URL for AR spawn request.');
     }
 
-    const { error } = await supabaseClient
+    const { error: insertError } = await supabaseClient
       .from('ar_spawn_requests')
       .insert(request);
 
-    if (error) throw error;
+    if (insertError) throw insertError;
+
+    // Fire-and-forget the conversion. The edge function flips the row to
+    // status='pending' (success) or status='failed' (with conversion_error
+    // populated) when it finishes; the Spectacles client owns the rest.
+    const { error: invokeError } = await supabaseClient.functions.invoke('convert-glb', {
+      body: { request_id: request.id }
+    });
+    if (invokeError) {
+      console.warn('convert-glb invoke failed; row left in pending_conversion:', invokeError);
+    }
+
     return request;
   }
 
