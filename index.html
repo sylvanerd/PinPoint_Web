@@ -1967,8 +1967,26 @@
     border: 1px solid var(--outline-variant);
     border-radius: var(--r);
     overflow: hidden;
+    position: relative;
   }
   .session-thumb svg { width: 100%; height: 100%; display: block; }
+  .session-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .session-thumb.has-more::after {
+    content: attr(data-more);
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(19,27,46,0.62);
+    color: var(--on-primary);
+    font-size: 11px;
+    font-weight: 700;
+  }
   .session-thumb.more {
     display: grid; place-items: center;
     font-size: 11px;
@@ -3114,11 +3132,11 @@
               <div class="session-meta">Session 03 · 46 min · Lena V. · Kitchen floor</div>
               <div class="session-quote">"I think we're close. I want to come back with my husband but I already know what I want."</div>
               <div class="session-thumbs">
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#a8825a"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#3a3530"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#c9a577"/><rect x="40" y="8" width="16" height="44" fill="#006a61"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#f4f0e8"/><rect x="6" y="6" width="48" height="48" fill="#fafafa"/></svg></div>
-                <div class="session-thumb more">+8</div>
+                <div class="session-thumb"><img src="assets/12.jpg" alt="Open double window with countryside view"></div>
+                <div class="session-thumb"><img src="assets/13.avif" alt="Warm modern interior inspiration"></div>
+                <div class="session-thumb"><img src="assets/154.jpg" alt="Bright kitchen with large windows"></div>
+                <div class="session-thumb"><img src="assets/178.webp" alt="Warm modern product inspiration"></div>
+                <div class="session-thumb has-more" data-more="+8"><img src="assets/1466.jpg" alt="Window seat with folding window view"></div>
               </div>
               <div class="session-footer">
                 <span><strong>12</strong> briefs</span>
@@ -3140,10 +3158,10 @@
               <div class="session-meta">Session 02 · 38 min · David K. · Kitchen + dining</div>
               <div class="session-quote">"I need to touch things. Photos don't show how something actually feels."</div>
               <div class="session-thumbs">
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#a8825a"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#d6cbb2"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#8a6a44"/></svg></div>
-                <div class="session-thumb more">+8</div>
+                <div class="session-thumb"><img src="assets/Adaptations-Showroom-1920x1200.jpeg" alt="Kitchen showroom with wood island and green tile backsplash"></div>
+                <div class="session-thumb"><img src="assets/images.jpeg" alt="Window frame material sample"></div>
+                <div class="session-thumb"><img src="assets/images (1).jpeg" alt="Marble surface material sample"></div>
+                <div class="session-thumb has-more" data-more="+8"><img src="assets/b6229d685ed4e04da561b56991aba5ce7e46c5a1-3375x2830.avif" alt="Material inspiration sample"></div>
               </div>
               <div class="session-footer">
                 <span><strong>11</strong> briefs</span>
@@ -3164,9 +3182,9 @@
               <div class="session-meta">Session 01 · 24 min · Walk-in</div>
               <div class="session-quote">"I'm just looking today. I wanted to see what's out there."</div>
               <div class="session-thumbs">
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#ebe5d8"/></svg></div>
-                <div class="session-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#c9a577"/></svg></div>
-                <div class="session-thumb more">+6</div>
+                <div class="session-thumb"><img src="assets/showroom.jpeg" alt="Window and door showroom display"></div>
+                <div class="session-thumb"><img src="assets/Who-is-the-best-double-glazing-company-in-UK.webp" alt="Double glazing showroom display"></div>
+                <div class="session-thumb has-more" data-more="+6"><img src="assets/barnet_virtual_tour.jpg" alt="Virtual tour showroom door samples"></div>
               </div>
               <div class="session-footer">
                 <span><strong>8</strong> briefs</span>
