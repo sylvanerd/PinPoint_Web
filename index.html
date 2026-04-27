@@ -1338,6 +1338,122 @@
   #mode-summary .section-head#summaryFlagSectionHead { gap: 12px; }
   #mode-summary .section-head#summaryFlagSectionHead > div:first-child { min-width: 0; flex: 1; }
 
+  #mode-summary .summary-session-tabs-wrap { margin: 0 0 20px; }
+  #mode-summary .summary-session-tabs-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--on-surface-variant); margin-bottom: 8px;
+  }
+  #mode-summary .summary-session-tabs-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #mode-summary .summary-session-tab {
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; padding: 6px 12px;
+    border-radius: var(--r-lg); border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest); color: var(--on-surface); cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  #mode-summary .summary-session-tab:hover { border-color: var(--secondary-tint); background: var(--secondary-tint-soft); }
+  #mode-summary .summary-session-tab.active { border-color: var(--secondary); background: var(--secondary-tint-soft); font-weight: 600; }
+
+  #mode-summary .summary-user-refs {
+    margin: 32px 0 0;
+    padding: 32px 0 0;
+    border-top: 1px solid var(--outline-variant);
+  }
+  #mode-summary .summary-user-refs-head { margin-bottom: 16px; }
+  #mode-summary .summary-user-refs-title {
+    font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 700;
+    letter-spacing: -0.02em; color: var(--on-surface);
+  }
+  #mode-summary .summary-user-refs-sub {
+    font-size: 13px; color: var(--on-surface-variant); margin-top: 4px; font-weight: 500;
+  }
+  #mode-summary .summary-user-refs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+    gap: 16px;
+  }
+  #mode-summary .summary-ref-card {
+    border-radius: var(--r-lg);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #mode-summary .summary-ref-card[data-ref-key] { min-width: 0; }
+  #mode-summary .summary-ref-img {
+    aspect-ratio: 4 / 3;
+    background: var(--surface-container-high);
+    display: grid; place-items: center;
+  }
+  #mode-summary .summary-ref-img img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  #mode-summary .summary-ref-ph {
+    font-size: 12px; color: var(--on-surface-variant); padding: 12px; text-align: center;
+  }
+  #mode-summary .summary-ref-title {
+    font-size: 13px; font-weight: 600; line-height: 1.4;
+    padding: 10px 12px 0; color: var(--on-surface);
+  }
+  #mode-summary .summary-ref-notes {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  #mode-summary .summary-ref-notes-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--on-surface-variant);
+  }
+  #mode-summary .summary-ref-notes-field {
+    width: 100%;
+    min-height: 72px;
+    resize: vertical;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    border-radius: var(--r);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface);
+    color: var(--on-surface);
+  }
+  #mode-summary .summary-ref-notes-field:read-only {
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    border-style: dashed;
+  }
+  #mode-summary .summary-ref-notes-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end;
+  }
+  #mode-summary .summary-ref-saved {
+    font-size: 12px; font-weight: 600; color: var(--secondary);
+    margin-right: auto;
+  }
+  #mode-summary .summary-ref-btn {
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--r);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    color: var(--on-surface);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  #mode-summary .summary-ref-btn:hover {
+    border-color: var(--secondary-tint);
+    background: var(--secondary-tint-soft);
+  }
+  #mode-summary .summary-ref-btn.save {
+    border-color: var(--secondary);
+    background: var(--secondary-tint-soft);
+    color: var(--on-surface);
+  }
   /* Right rail */
   .panel { padding: 20px; }
 
@@ -2840,6 +2956,11 @@
       </button>
     </div>
 
+    <div class="summary-session-tabs-wrap" id="summarySessionTabsWrap" hidden>
+      <div class="summary-session-tabs-label" id="summarySessionTabsLabel">Visits</div>
+      <div class="summary-session-tabs-row" id="summarySessionTabsRow" role="tablist" aria-label="Session summaries for this customer"></div>
+    </div>
+
     <div class="summary-grid">
       <div>
         <div class="summary-hero" id="summaryHero">
@@ -2950,6 +3071,14 @@
           </div>
         </section>
       </aside>
+    </div>
+
+    <div class="summary-user-refs" id="summaryRefImagesSection" hidden>
+      <div class="summary-user-refs-head">
+        <div class="summary-user-refs-title">User provided reference images</div>
+        <div class="summary-user-refs-sub" id="summaryRefImagesSub"></div>
+      </div>
+      <div class="summary-user-refs-grid" id="summaryRefImagesGrid"></div>
     </div>
 
     <!-- CTA -->
@@ -3855,14 +3984,51 @@
     customerName: '',
     _pinCountForSession: null,
     pinsForTimeline: [],
+    sessionSummariesList: [],
+    selectedSessionId: null,
+    cropsForSession: [],
     recommendedRecs: null,
     recommendedFilter: 'all',
     recommendedExpanded: false
   };
+  const MAX_SESSION_SUMMARY_TABS = 4;
   const SUMMARY_REC_PREVIEW = 6;
   const DEFAULT_SUMMARY_CUSTOMER_NAME = 'Sylvan Marchetti';
   const SHOWROOM_FLOOR_LABEL = 'Kitchen A';
   let visitSummarySyncTimer = null;
+  let sessionSummaryCropsChannel = null;
+
+  function unsubscribeSessionSummaryCrops() {
+    if (sessionSummaryCropsChannel && supabaseClient) {
+      supabaseClient.removeChannel(sessionSummaryCropsChannel);
+      sessionSummaryCropsChannel = null;
+    }
+  }
+
+  /** Realtime: refresh reference images when the crops table changes for this visit’s session_id. */
+  function subscribeSessionSummaryCropsForSessionId(sessionId) {
+    unsubscribeSessionSummaryCrops();
+    if (!supabaseClient || !sessionId) return;
+    const sid = String(sessionId);
+    sessionSummaryCropsChannel = supabaseClient
+      .channel('crops:session:' + sid.replace(/[^a-zA-Z0-9_-]+/g, '-').slice(0, 80))
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'crops', filter: 'session_id=eq.' + sid },
+        () => {
+          const active = visitSummaryState.row && visitSummaryState.row.session_id;
+          if (!active || String(active) !== sid) return;
+          fetchCropsForSession(sid)
+            .then(rows => {
+              if (String(visitSummaryState.row && visitSummaryState.row.session_id) !== sid) return;
+              visitSummaryState.cropsForSession = rows;
+              renderSummaryReferenceImagesSection();
+            })
+            .catch(e => console.warn('crops realtime refresh', e));
+        }
+      )
+      .subscribe();
+  }
 
   function getTrackedSessionId() {
     const first = showroomState.briefs[0];
@@ -4134,10 +4300,13 @@
     if (!supabaseClient || !sessionId) return [];
     const { data, error } = await supabaseClient
       .from('crops')
-      .select('id,created_at,title,image_url')
+      .select('id,created_at,title,image_url,file_path,detected_product')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true });
-    if (error) return [];
+    if (error) {
+      console.warn('crops for session', error);
+      return [];
+    }
     return data || [];
   }
 
@@ -4418,6 +4587,173 @@
     if (wrap) wrap.classList.toggle('expanded', Boolean(visitSummaryState.recommendedExpanded));
   }
 
+  function cropImageUrlForSummary(c) {
+    if (!c) return '';
+    const a = c.image_url != null ? String(c.image_url).trim() : '';
+    if (a) return a;
+    const b = c.file_path != null ? String(c.file_path).trim() : '';
+    return b;
+  }
+
+  const REF_IMAGE_NOTES_STORAGE_KEY = 'pinpoint_session_reference_image_notes_v1';
+
+  function getAllReferenceImageNotes() {
+    try {
+      const raw = localStorage.getItem(REF_IMAGE_NOTES_STORAGE_KEY);
+      if (!raw) return {};
+      const o = JSON.parse(raw);
+      return typeof o === 'object' && o != null && !Array.isArray(o) ? o : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function getReferenceImageNote(sessionId, refKey) {
+    if (!sessionId || !refKey) return '';
+    const all = getAllReferenceImageNotes();
+    const bucket = all[sessionId];
+    if (!bucket || typeof bucket !== 'object') return '';
+    const v = bucket[refKey];
+    return v != null ? String(v) : '';
+  }
+
+  function setReferenceImageNote(sessionId, refKey, text) {
+    if (!sessionId || !refKey) return;
+    const all = getAllReferenceImageNotes();
+    if (!all[sessionId]) all[sessionId] = {};
+    all[sessionId][refKey] = text;
+    try {
+      localStorage.setItem(REF_IMAGE_NOTES_STORAGE_KEY, JSON.stringify(all));
+    } catch (e) {
+      console.warn('reference image note save', e);
+    }
+  }
+
+  function getRefKeyForReferenceImage(c, index) {
+    if (c && c.id != null && String(c.id).trim() !== '') return String(c.id).trim();
+    return 'row-' + index;
+  }
+
+  function initReferenceImageNotesUI() {
+    const section = document.getElementById('summaryRefImagesSection');
+    if (!section || section._refNotesInit) return;
+    section._refNotesInit = true;
+    section.addEventListener('click', e => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const btn = t.closest('button');
+      if (!btn || !section.contains(btn)) return;
+      const card = btn.closest('.summary-ref-card');
+      if (!card) return;
+      const refKey = card.getAttribute('data-ref-key');
+      if (!refKey) return;
+      const row = visitSummaryState.row;
+      const sessionId = row && row.session_id;
+      if (!sessionId) return;
+      const ta = card.querySelector('.summary-ref-notes-field');
+      const editB = card.querySelector('.summary-ref-btn-edit');
+      const saveB = card.querySelector('.summary-ref-btn-save');
+      const cancB = card.querySelector('.summary-ref-btn-cancel');
+      const savedL = card.querySelector('.summary-ref-saved');
+      if (!ta || !editB || !saveB || !cancB) return;
+      if (btn === editB) {
+        ta.readOnly = false;
+        ta.focus();
+        editB.hidden = true;
+        saveB.hidden = false;
+        cancB.hidden = false;
+        if (savedL) savedL.hidden = true;
+        return;
+      }
+      if (btn === saveB) {
+        setReferenceImageNote(sessionId, refKey, ta.value);
+        ta.readOnly = true;
+        editB.hidden = false;
+        saveB.hidden = true;
+        cancB.hidden = true;
+        if (savedL) {
+          savedL.hidden = false;
+          clearTimeout(savedL._t);
+          savedL._t = setTimeout(() => {
+            savedL.hidden = true;
+          }, 1800);
+        }
+        return;
+      }
+      if (btn === cancB) {
+        ta.value = getReferenceImageNote(sessionId, refKey);
+        ta.readOnly = true;
+        editB.hidden = false;
+        saveB.hidden = true;
+        cancB.hidden = true;
+        if (savedL) savedL.hidden = true;
+      }
+    });
+  }
+
+  function renderSummaryReferenceImagesSection() {
+    const section = document.getElementById('summaryRefImagesSection');
+    const grid = document.getElementById('summaryRefImagesGrid');
+    const sub = document.getElementById('summaryRefImagesSub');
+    if (!section || !grid) return;
+    const v = visitSummaryState.row;
+    if (!v || !v.session_id) {
+      section.hidden = true;
+      grid.innerHTML = '';
+      if (sub) sub.textContent = '';
+      return;
+    }
+    section.hidden = false;
+    const sessionId = v.session_id;
+    const crops = visitSummaryState.cropsForSession || [];
+    if (sub) {
+      sub.textContent = crops.length
+        ? crops.length === 1
+          ? '1 image for this session.'
+          : String(crops.length) + ' images for this session.'
+        : 'No user-provided reference images for this visit yet.';
+    }
+    if (!crops.length) {
+      grid.innerHTML = '';
+    } else {
+      grid.innerHTML = crops
+        .map((c, i) => {
+          const refKey = getRefKeyForReferenceImage(c, i);
+          const note = getReferenceImageNote(sessionId, refKey);
+          const rawTitle = c.title != null ? String(c.title).trim() : '';
+          const det = c.detected_product != null ? String(c.detected_product).trim() : '';
+          const title = rawTitle || det || 'Untitled';
+          const url = cropImageUrlForSummary(c);
+          const img = url
+            ? '<img src="' + escapeHtml(url) + '" alt="" loading="lazy" />'
+            : '<div class="summary-ref-ph">No image URL</div>';
+          return (
+            '<div class="summary-ref-card" data-ref-key="' +
+            escapeHtml(refKey) +
+            '">' +
+            '<div class="summary-ref-img">' +
+            img +
+            '</div>' +
+            '<div class="summary-ref-title">' +
+            escapeHtml(title) +
+            '</div>' +
+            '<div class="summary-ref-notes">' +
+            '<div class="summary-ref-notes-label">Notes</div>' +
+            '<textarea class="summary-ref-notes-field" rows="3" readonly spellcheck="true">' +
+            escapeHtml(note) +
+            '</textarea>' +
+            '<div class="summary-ref-notes-bar">' +
+            '<span class="summary-ref-saved" hidden>Saved</span>' +
+            '<button type="button" class="summary-ref-btn summary-ref-btn-edit">Edit</button>' +
+            '<button type="button" class="summary-ref-btn summary-ref-btn-save save" hidden>Save</button>' +
+            '<button type="button" class="summary-ref-btn summary-ref-btn-cancel" hidden>Cancel</button>' +
+            '</div></div></div>'
+          );
+        })
+        .join('');
+    }
+  }
+
   function applySessionSummaryToDom(sessionId) {
     const v = visitSummaryState.row;
     const sess = visitSummaryState.session;
@@ -4561,6 +4897,8 @@
         }
       })();
     } else {
+      unsubscribeSessionSummaryCrops();
+      visitSummaryState.cropsForSession = [];
       visitSummaryState.recommendedRecs = null;
       visitSummaryState.recommendedFilter = 'all';
       visitSummaryState.recommendedExpanded = false;
@@ -4607,6 +4945,7 @@
       v
         ? 'Profile generated · <strong>ready to share</strong>'
         : 'Waiting for visit · <strong>summary pipeline</strong>';
+    renderSummaryReferenceImagesSection();
   }
 
   async function fetchSessionRow(sessionId) {
@@ -4681,29 +5020,125 @@
     return { row: data, customerName: name };
   }
 
-  /** Most recent visit_summaries row for this customer (by generated_at). */
-  async function fetchLatestVisitSummaryForCustomer(customerId) {
-    if (!supabaseClient || !customerId) return { row: null, customerName: '' };
+  async function fetchCustomerSessionSummariesList(customerId) {
+    if (!supabaseClient || !customerId) return [];
     const { data, error } = await supabaseClient
       .from('visit_summaries')
-      .select('id,session_id,customer_id,summary_text,key_preferences,recommended_products,generated_at')
+      .select('session_id,generated_at')
       .eq('customer_id', customerId)
       .order('generated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(24);
     if (error) {
-      console.warn('visit_summaries latest by customer', error);
-      return { row: null, customerName: '' };
+      console.warn('visit_summaries list by customer', error);
+      return [];
     }
-    if (!data) return { row: null, customerName: '' };
-    let name = '';
-    if (data.customer_id) {
-      name = await fetchCustomerName(data.customer_id);
+    const raw = data || [];
+    const out = [];
+    const seen = new Set();
+    for (const r of raw) {
+      const id = r && r.session_id != null ? String(r.session_id) : '';
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(r);
+      if (out.length >= MAX_SESSION_SUMMARY_TABS) break;
     }
-    return { row: data, customerName: name };
+    return out;
+  }
+
+  /** List is newest-first: index 0 = latest → highest number (e.g. Visit 4); last index = oldest → Visit 1. */
+  function formatSessionSummaryTabLabel(visitIndex, listLength) {
+    const i = Number(visitIndex);
+    const L = Number(listLength);
+    if (!Number.isFinite(i) || i < 0 || !Number.isFinite(L) || L < 1) return 'Visit';
+    return 'Visit ' + (L - i);
+  }
+
+  async function loadSessionSummaryDataForSessionId(sessionId) {
+    if (!supabaseClient || !sessionId) return;
+    const vs = await fetchVisitSummaryForSession(sessionId);
+    if (!vs.row) {
+      unsubscribeSessionSummaryCrops();
+      visitSummaryState.row = null;
+      visitSummaryState.session = null;
+      visitSummaryState.customerName = '';
+      visitSummaryState._pinCountForSession = null;
+      visitSummaryState.pinsForTimeline = [];
+      visitSummaryState.cropsForSession = [];
+      visitSummaryState.selectedSessionId = null;
+      updateSummaryTabAvailability();
+      applySessionSummaryToDom(null);
+      return;
+    }
+    const [sessionRow, pinCount, pinList, cropRows] = await Promise.all([
+      fetchSessionRow(sessionId),
+      fetchPinCountForSession(sessionId),
+      fetchPinsForSessionForTimeline(sessionId),
+      fetchCropsForSession(sessionId)
+    ]);
+    visitSummaryState.row = vs.row;
+    visitSummaryState.session = sessionRow;
+    visitSummaryState.customerName = vs.customerName;
+    visitSummaryState._pinCountForSession = pinCount;
+    visitSummaryState.pinsForTimeline = pinList;
+    visitSummaryState.cropsForSession = cropRows;
+    visitSummaryState.selectedSessionId = sessionId;
+    subscribeSessionSummaryCropsForSessionId(sessionId);
+    updateSummaryTabAvailability();
+    applySessionSummaryToDom(sessionId);
+  }
+
+  function renderSessionSummaryTabs() {
+    const wrap = document.getElementById('summarySessionTabsWrap');
+    const row = document.getElementById('summarySessionTabsRow');
+    if (!wrap || !row) return;
+    const list = visitSummaryState.sessionSummariesList || [];
+    if (list.length <= 1) {
+      wrap.hidden = true;
+      row.innerHTML = '';
+      return;
+    }
+    wrap.hidden = false;
+    const tracked = getTrackedSessionId();
+    const selected = visitSummaryState.selectedSessionId;
+    row.innerHTML = list
+      .map((s, i) => {
+        const isActive = String(selected) === String(s.session_id);
+        const isCurrentFloor = tracked && String(tracked) === String(s.session_id);
+        const sub = isCurrentFloor ? ' · current' : '';
+        return (
+          '<button type="button" role="tab" class="summary-session-tab' +
+          (isActive ? ' active' : '') +
+          '" data-session-id="' +
+          escapeHtml(s.session_id) +
+          '" aria-selected="' +
+          (isActive ? 'true' : 'false') +
+          '">' +
+          escapeHtml(formatSessionSummaryTabLabel(i, list.length) + sub) +
+          '</button>'
+        );
+      })
+      .join('');
+    row.querySelectorAll('.summary-session-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-session-id');
+        if (!id) return;
+        visitSummaryState.selectedSessionId = id;
+        loadSessionSummaryDataForSessionId(id)
+          .then(() => {
+            renderSessionSummaryTabs();
+            if (document.getElementById('mode-summary') && document.getElementById('mode-summary').classList.contains('active')) {
+              applySummaryViewHeaders();
+            }
+          })
+          .catch(e => console.warn('session tab', e));
+      });
+    });
   }
 
   function getEffectiveSummarySessionId() {
+    if (visitSummaryState.selectedSessionId) {
+      return visitSummaryState.selectedSessionId;
+    }
     if (visitSummaryState.row && visitSummaryState.row.session_id) {
       return visitSummaryState.row.session_id;
     }
@@ -4716,31 +5151,16 @@
     const sid = getTrackedSessionId();
 
     if (!customerId && !sid) {
+      unsubscribeSessionSummaryCrops();
       visitSummaryState.row = null;
       visitSummaryState.session = null;
       visitSummaryState.customerName = '';
       visitSummaryState._pinCountForSession = null;
       visitSummaryState.pinsForTimeline = [];
-      updateSummaryTabAvailability();
-      if (document.getElementById('mode-summary').classList.contains('active')) {
-        applySessionSummaryToDom(null);
-      }
-      return;
-    }
-
-    let vs = { row: null, customerName: '' };
-    if (customerId) {
-      vs = await fetchLatestVisitSummaryForCustomer(customerId);
-    }
-    if (!vs.row && sid) {
-      vs = await fetchVisitSummaryForSession(sid);
-    }
-    if (!vs.row) {
-      visitSummaryState.row = null;
-      visitSummaryState.session = null;
-      visitSummaryState.customerName = '';
-      visitSummaryState._pinCountForSession = null;
-      visitSummaryState.pinsForTimeline = [];
+      visitSummaryState.sessionSummariesList = [];
+      visitSummaryState.cropsForSession = [];
+      visitSummaryState.selectedSessionId = null;
+      renderSessionSummaryTabs();
       updateSummaryTabAvailability();
       if (document.getElementById('mode-summary') && document.getElementById('mode-summary').classList.contains('active')) {
         applySessionSummaryToDom(null);
@@ -4748,20 +5168,48 @@
       return;
     }
 
-    const effectiveSessionId = vs.row.session_id;
-    const [sessionRow, pinCount, pinList] = await Promise.all([
-      fetchSessionRow(effectiveSessionId),
-      fetchPinCountForSession(effectiveSessionId),
-      fetchPinsForSessionForTimeline(effectiveSessionId)
-    ]);
-    visitSummaryState.row = vs.row;
-    visitSummaryState.session = sessionRow;
-    visitSummaryState.customerName = vs.customerName;
-    visitSummaryState._pinCountForSession = pinCount;
-    visitSummaryState.pinsForTimeline = pinList;
+    let list = [];
+    if (customerId) {
+      list = await fetchCustomerSessionSummariesList(customerId);
+    }
+    visitSummaryState.sessionSummariesList = list;
 
-    updateSummaryTabAvailability();
-    applySessionSummaryToDom(effectiveSessionId);
+    const inList = new Set(list.map(s => String(s.session_id)));
+    let target = visitSummaryState.selectedSessionId;
+    if (target != null && inList.has(String(target))) {
+      // keep user’s tab
+    } else if (list.length) {
+      target = sid && inList.has(String(sid)) ? sid : list[0].session_id;
+    } else {
+      target = null;
+    }
+
+    if (list.length === 0) {
+      if (sid) {
+        visitSummaryState.selectedSessionId = sid;
+        await loadSessionSummaryDataForSessionId(sid);
+        renderSessionSummaryTabs();
+        return;
+      }
+      unsubscribeSessionSummaryCrops();
+      visitSummaryState.row = null;
+      visitSummaryState.session = null;
+      visitSummaryState.customerName = '';
+      visitSummaryState._pinCountForSession = null;
+      visitSummaryState.pinsForTimeline = [];
+      visitSummaryState.cropsForSession = [];
+      visitSummaryState.selectedSessionId = null;
+      renderSessionSummaryTabs();
+      updateSummaryTabAvailability();
+      if (document.getElementById('mode-summary') && document.getElementById('mode-summary').classList.contains('active')) {
+        applySessionSummaryToDom(null);
+      }
+      return;
+    }
+
+    visitSummaryState.selectedSessionId = target;
+    await loadSessionSummaryDataForSessionId(target);
+    renderSessionSummaryTabs();
   }
 
   function scheduleVisitSummarySync() {
@@ -5120,6 +5568,7 @@
   });
   subscribeToPins();
   subscribeToVisitSummaries();
+  initReferenceImageNotesUI();
 </script>
 
 </body>
