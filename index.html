@@ -3696,6 +3696,7 @@
     const style = formatJsonValue(product.style);
     const rating = product.rating ? 'Rating ' + product.rating : '';
     const productId = match.productId || product.id || '';
+    const modelUrl = product.model_3d_url || '';
     const chips = [material, style, rating]
       .filter(Boolean)
       .map(value => '<span class="match-chip">' + escapeHtml(value) + '</span>')
@@ -3704,7 +3705,7 @@
     const meta = [sku, category, price].filter(Boolean).join(' · ');
 
     return `
-      <div class="match" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}">
+      <div class="match" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}" data-model-url="${escapeHtml(modelUrl)}">
         <div class="match-img">
           ${product.image_url ? '<img class="match-photo" src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" />' : fallbackProductSvg()}
           ${score ? '<span class="match-confidence">' + escapeHtml(score) + '</span>' : ''}
@@ -5397,12 +5398,14 @@
       : fallbackProductId(productName);
 
     // This row is the handoff from the web portal to the Spectacles app.
-    // Current simplified flow: Spectacles listens for `pending` requests,
-    // claims one, and enables a pre-placed model in front of the user.
+    // Spectacles listens for `pending` requests, claims one, and downloads
+    // the GLB at `original_model_3d_url` to spawn in front of the user.
+    const modelUrl = card.dataset.modelUrl || '';
     const request = {
       id: crypto.randomUUID(),
       pin_id: fallbackPinId(card, productName),
       product_id: productId,
+      original_model_3d_url: modelUrl || null,
       status: 'pending'
     };
 
