@@ -3704,8 +3704,9 @@
     const score = matchScoreLabel(match.score);
     const meta = [sku, category, price].filter(Boolean).join(' · ');
 
+    const hasModel = !!modelUrl;
     return `
-      <div class="match" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}" data-model-url="${escapeHtml(modelUrl)}">
+      <div class="match${hasModel ? '' : ' no-ar'}" data-pin-id="${escapeHtml(pinId)}" data-product-id="${escapeHtml(productId)}" data-product-name="${escapeHtml(name)}" data-model-url="${escapeHtml(modelUrl)}">
         <div class="match-img">
           ${product.image_url ? '<img class="match-photo" src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(name) + '" loading="lazy" />' : fallbackProductSvg()}
           ${score ? '<span class="match-confidence">' + escapeHtml(score) + '</span>' : ''}
@@ -3716,7 +3717,7 @@
           ${chips ? '<div class="match-detail-chips">' + chips + '</div>' : ''}
           ${match.reason ? '<div class="match-reason">' + escapeHtml(match.reason) + '</div>' : ''}
         </div>
-        <button class="match-spawn" onclick="spawnAR(this.closest('.match'))">See in AR</button>
+        <button class="match-spawn" onclick="spawnAR(this.closest('.match'))"${hasModel ? '' : ' disabled'}>${hasModel ? 'See in AR' : 'No 3D model'}</button>
       </div>
     `;
   }
