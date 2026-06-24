@@ -2513,6 +2513,293 @@
     .profile-hero-stats { padding-left: 0; border-left: none; padding-top: 16px; border-top: 1px solid var(--outline-variant); align-items: flex-start; text-align: left; }
     .hero-stat-line { justify-content: flex-start; }
   }
+
+  /* ============================================================
+     PRODUCT INSIGHTS · Showroom Flow (spatial)
+     All selectors scoped to #view-product so this panel stays
+     self-contained and never leaks into the other views.
+     ============================================================ */
+  #view-product .wrap { max-width: 1040px; margin: 0 auto; }
+
+  #view-product .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-strong);
+    margin-bottom: 6px;
+  }
+  #view-product h1.page-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    margin: 0 0 22px;
+  }
+
+  #view-product .card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-float);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  #view-product .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+    flex-wrap: wrap;
+  }
+  #view-product .card-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  #view-product .card-sub {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    margin-top: 2px;
+  }
+
+  #view-product .toggle-group {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-container);
+    padding: 4px;
+    border-radius: var(--r);
+  }
+  #view-product .chip {
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    padding: 7px 13px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+  }
+  #view-product .chip:hover:not(.on) { color: var(--on-surface); }
+  #view-product .chip.on {
+    background: var(--surface-container-lowest);
+    color: var(--primary);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.08);
+  }
+
+  #view-product .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+    flex-wrap: wrap;
+  }
+  #view-product .controls-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-right: 4px;
+  }
+  #view-product .controls-cluster { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #view-product .scope-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+  #view-product .scope-chip {
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    padding: 6px 11px;
+    border-radius: var(--r-full);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  #view-product .scope-chip:hover { border-color: var(--primary); }
+  #view-product .scope-chip.on {
+    border-color: var(--secondary);
+    background: var(--secondary-tint-soft);
+    color: var(--on-surface);
+    font-weight: 600;
+  }
+  #view-product .scope-chip .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+  #view-product .hidden { display: none !important; }
+
+  #view-product .map-wrap { padding: 16px 18px; }
+  #view-product .map-surface {
+    position: relative;
+    width: 100%;
+    border-radius: var(--r);
+    border: 1px solid var(--outline-variant);
+    overflow: hidden;
+    background:
+      linear-gradient(var(--outline-variant) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, var(--outline-variant) 1px, transparent 1px) 0 0 / 24px 24px,
+      var(--surface-container-low);
+  }
+  #view-product svg.floor { display: block; width: 100%; height: auto; }
+
+  #view-product .room-rect { fill: rgba(255,255,255,0.5); stroke: var(--on-surface-variant); stroke-width: 1.5; }
+  #view-product .room-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 500;
+    fill: var(--on-surface-variant);
+  }
+  #view-product .product-node { fill: var(--surface-container-lowest); stroke: var(--outline); stroke-width: 1; }
+  #view-product .product-label { font-size: 11px; fill: var(--on-surface-variant); font-weight: 500; }
+
+  #view-product .map-legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    padding: 12px 18px;
+    border-top: 1px solid var(--outline-variant);
+    font-size: 11px; font-weight: 500;
+    color: var(--on-surface-variant);
+  }
+  #view-product .legend-item { display: flex; align-items: center; gap: 6px; }
+  #view-product .legend-swatch { width: 9px; height: 9px; border-radius: var(--r-full); }
+  #view-product .legend-line { width: 16px; height: 2px; border-radius: 2px; }
+
+  #view-product .insight-callout {
+    margin: 0 18px 16px;
+    padding: 11px 14px;
+    background: var(--primary-tint-soft);
+    border-left: 3px solid var(--secondary);
+    border-radius: var(--r);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--on-surface-variant);
+  }
+  #view-product .insight-callout strong { color: var(--on-surface); font-weight: 600; }
+
+  #view-product .section-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    color: var(--on-surface-variant);
+    padding: 16px 18px 10px;
+  }
+  #view-product table.breakdown { width: 100%; border-collapse: collapse; }
+  #view-product table.breakdown th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  #view-product table.breakdown td {
+    padding: 12px 18px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--surface-container);
+    vertical-align: middle;
+  }
+  #view-product table.breakdown tr:last-child td { border-bottom: none; }
+  #view-product .prod-name { font-weight: 600; }
+  #view-product .prod-zone { font-size: 11px; color: var(--on-surface-variant); }
+  #view-product .sent-bar { display: inline-flex; height: 7px; width: 90px; border-radius: var(--r-full); overflow: hidden; background: var(--surface-container); vertical-align: middle; }
+  #view-product .sent-pos { background: var(--secondary); height: 100%; }
+  #view-product .sent-neg { background: var(--error); height: 100%; }
+  #view-product .order-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 500;
+    padding: 3px 8px; border-radius: var(--r-full);
+    background: var(--surface-container); color: var(--on-surface-variant);
+  }
+  #view-product .order-pill.early { background: var(--secondary-tint-soft); color: var(--secondary-strong); }
+  #view-product .order-pill.late  { background: var(--warning-tint); color: var(--warning); }
+  #view-product .num { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+  #view-product .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--outline-variant);
+    border-top: 1px solid var(--outline-variant);
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  #view-product .summary-item {
+    background: var(--surface-container-lowest);
+    padding: 16px 18px;
+  }
+  #view-product .summary-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--secondary-strong);
+    margin-bottom: 8px;
+  }
+  #view-product .summary-headline {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    margin-bottom: 5px;
+  }
+  #view-product .summary-body {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+  }
+  #view-product .summary-caveat {
+    padding: 12px 18px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+    font-style: italic;
+  }
+
+  #view-product .themes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    padding: 4px 18px 18px;
+  }
+  #view-product .theme {
+    border: 1px solid var(--outline-variant);
+    border-left: 3px solid var(--outline);
+    border-radius: var(--r);
+    padding: 13px 14px;
+    background: var(--surface-container-lowest);
+  }
+  #view-product .theme.pos { border-left-color: var(--secondary); }
+  #view-product .theme.neg { border-left-color: var(--error); }
+  #view-product .theme.neu { border-left-color: var(--warning); }
+  #view-product .theme-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+  #view-product .theme-label { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 14px; }
+  #view-product .theme-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500;
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+  }
+  #view-product .theme-quote {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+    padding: 5px 0 5px 10px;
+    border-left: 2px solid var(--surface-container-high);
+    margin-top: 6px;
+  }
+
+  #view-product .breakdown tr.clickable { cursor: pointer; }
+  #view-product .breakdown tr.clickable:hover td { background: var(--surface-container-low); }
+  #view-product .breakdown tr.clickable.active td { background: var(--primary-tint-soft); }
 </style>
 </head>
 <body>
@@ -3319,190 +3606,105 @@
 <!-- ====================================================== -->
 <section class="view" id="view-product">
 
-  <div class="page-header">
-    <div>
-      <div class="eyebrow">Product intelligence · last 90 days</div>
-      <h1 class="page-title">What the showroom is saying</h1>
-    </div>
-    <div class="page-meta">
-      <strong>Aggregated reactions</strong>
-      1 of 247 products<br>
-      Updated 4 min ago
-    </div>
-  </div>
+  <div class="wrap">
 
-  <div class="product-hero">
-    <div class="product-image">
-      <img src="assets/senso-483.jpg" alt="Nobilia Senso kitchen in smoked oak finish">
-      <span class="product-image-label">Nobilia · Showroom B</span>
-    </div>
+    <div class="eyebrow">Product Insights · showroom flow · last 90 days</div>
+    <h1 class="page-title">How customers move, and where attention lands</h1>
 
-    <div class="product-info">
-      <div class="product-category">Kitchens · handle-less line</div>
-      <h2 class="product-name">Nobilia <span class="accent">Senso.</span></h2>
-      <div class="product-sku">SKU N-S-204 · Smoked oak · €11,400 base</div>
-
-      <div class="product-stats">
-        <div class="pstat">
-          <div class="pstat-value">34</div>
-          <div class="pstat-label">Reactions · 90d</div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Showroom floor</div>
+          <div class="card-sub" id="cardSub">Browsing routes reconstructed from pin order across sessions</div>
         </div>
-        <div class="pstat">
-          <div class="pstat-value pos">62%</div>
-          <div class="pstat-label">Positive</div>
-        </div>
-        <div class="pstat">
-          <div class="pstat-value neg">17%</div>
-          <div class="pstat-label">Concerns</div>
-        </div>
-        <div class="pstat">
-          <div class="pstat-value">11</div>
-          <div class="pstat-label">AR spawns</div>
+        <div class="toggle-group" role="tablist" aria-label="Layer">
+          <button class="chip on" id="modeRoute" role="tab" aria-selected="true">Route</button>
+          <button class="chip" id="modeHeat" role="tab" aria-selected="false">Heat</button>
         </div>
       </div>
 
-      <div class="sentiment-ribbon">
-        <div class="sr-pos"></div>
-        <div class="sr-neu"></div>
-        <div class="sr-neg"></div>
+      <!-- scope controls: only meaningful for Route -->
+      <div class="controls-row" id="scopeRow">
+        <div class="controls-cluster">
+          <span class="controls-label">Customer</span>
+          <div class="scope-chips" id="scopeChips"></div>
+        </div>
       </div>
-      <div class="sentiment-legend">
-        <span><strong>62%</strong> Positive</span>
-        <span><strong>21%</strong> Neutral</span>
-        <span><strong>17%</strong> Concerns</span>
-      </div>
-    </div>
-  </div>
 
-  <div class="section-head">
-    <div class="section-title">What people actually say</div>
-    <div class="section-count">4 dominant themes</div>
-  </div>
+      <div class="map-wrap">
+        <div class="map-surface">
+          <svg class="floor" viewBox="0 0 1000 560" id="floor" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="heatGrad">
+                <stop offset="0%"  stop-color="#131b2e" stop-opacity="0.55"/>
+                <stop offset="45%" stop-color="#131b2e" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="#131b2e" stop-opacity="0"/>
+              </radialGradient>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#76777d"/>
+              </marker>
+            </defs>
 
-  <div class="themes-grid">
-    <div class="theme-card pos">
-      <div class="theme-head">
-        <div class="theme-name">Handle-less detail</div>
-        <div class="theme-count">18 mentions</div>
-      </div>
-      <div class="theme-quotes">
-        <div class="theme-quote">"I love how this one has no handles at all, it looks so clean."</div>
-        <div class="theme-quote">"The line of the doors is unbroken. It's really elegant."</div>
-      </div>
-    </div>
-    <div class="theme-card pos">
-      <div class="theme-head">
-        <div class="theme-name">Oak warmth</div>
-        <div class="theme-count">14 mentions</div>
-      </div>
-      <div class="theme-quotes">
-        <div class="theme-quote">"The wood feels alive, not like a photo of wood."</div>
-        <div class="theme-quote">"The smoked oak is warmer than I expected. I like that."</div>
-      </div>
-    </div>
-    <div class="theme-card neg">
-      <div class="theme-head">
-        <div class="theme-name">Fingerprint concern</div>
-        <div class="theme-count">6 mentions</div>
-      </div>
-      <div class="theme-quotes">
-        <div class="theme-quote">"How does this hold up with two kids at home?"</div>
-        <div class="theme-quote">"I can already see fingerprints on the demo unit."</div>
-      </div>
-    </div>
-    <div class="theme-card neg">
-      <div class="theme-head">
-        <div class="theme-name">Price resistance</div>
-        <div class="theme-count">4 mentions</div>
-      </div>
-      <div class="theme-quotes">
-        <div class="theme-quote">"It's gorgeous but it's at the top of what we planned."</div>
-        <div class="theme-quote">"Is there a similar look in something more affordable?"</div>
-      </div>
-    </div>
-  </div>
+            <!-- rooms (static), echoing your live spatial map -->
+            <g id="rooms">
+              <rect class="room-rect" x="40"  y="40"  width="560" height="480" rx="3"/>
+              <text class="room-tag" x="58" y="68">KITCHEN A</text>
+              <rect class="room-rect" x="640" y="40"  width="320" height="480" rx="3"/>
+              <text class="room-tag" x="658" y="68">LIVING · DINING</text>
+            </g>
 
-  <div class="section-head">
-    <div class="section-title">Reaction stream</div>
-    <div class="section-count">Last 12 · 34 total</div>
-  </div>
+            <!-- product nodes (static reference markers) -->
+            <g id="productNodes"></g>
 
-  <div class="comments-stream">
-    <div class="comment">
-      <div class="comment-avatar">SM</div>
-      <div class="comment-body">
-        <div class="comment-head">
-          <span class="comment-name">Sylvan Marchetti</span>
-          <span class="comment-date">23 Apr</span>
-          <span class="comment-sentiment neu">Mixed</span>
+            <!-- dynamic layer: routes OR heat -->
+            <g id="layer"></g>
+          </svg>
         </div>
-        <div class="comment-text">"The handle detail is beautiful. I'm worried about fingerprints with two kids."</div>
+
+        <div class="map-legend" id="legend"></div>
       </div>
-      <div class="comment-outcome">
-        <strong>In session</strong>
-        Lena V.
-      </div>
+
+      <div class="insight-callout" id="callout"></div>
     </div>
-    <div class="comment">
-      <div class="comment-avatar">JH</div>
-      <div class="comment-body">
-        <div class="comment-head">
-          <span class="comment-name">Jonas Hartmann</span>
-          <span class="comment-date">22 Apr</span>
-          <span class="comment-sentiment pos">Positive</span>
+
+    <!-- computed route summary: derived insights, not hardcoded -->
+    <div class="card" id="routeSummaryCard">
+      <div class="section-title">What the route data says · aggregated across <span id="sessCount"></span> sessions</div>
+      <div class="summary-grid" id="summaryGrid"></div>
+      <div class="summary-caveat">Aggregate signal for merchandising. Single-customer paths are partly shaped by floor layout, so read them as direction, not intent.</div>
+    </div>
+
+    <!-- per-product breakdown, the scannable drill-down under the spatial view -->
+    <div class="card">
+      <div class="section-title">Per-product breakdown · aggregated <span style="font-weight:500;color:var(--on-surface-variant);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:none;letter-spacing:0">· tap a row for detail</span></div>
+      <table class="breakdown">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Reactions</th>
+            <th>Sentiment</th>
+            <th>Avg dwell</th>
+            <th>Typical browse order</th>
+          </tr>
+        </thead>
+        <tbody id="breakdownBody"></tbody>
+      </table>
+    </div>
+
+    <!-- per-product DETAIL ("what people actually say"),
+         opened by clicking a product row above -->
+    <div class="card hidden" id="detailCard">
+      <div class="card-head">
+        <div>
+          <div class="card-title" id="detailTitle"></div>
+          <div class="card-sub" id="detailSub"></div>
         </div>
-        <div class="comment-text">"The smoked oak version is exactly what my wife has been looking for. We're coming back together."</div>
+        <button class="chip" id="detailClose">Close</button>
       </div>
-      <div class="comment-outcome">
-        <strong>Returning</strong>
-        Scheduled 27 Apr
-      </div>
+      <div class="section-title">What people actually say</div>
+      <div id="detailThemes" class="themes"></div>
     </div>
-    <div class="comment">
-      <div class="comment-avatar">SK</div>
-      <div class="comment-body">
-        <div class="comment-head">
-          <span class="comment-name">Sofia Kovač</span>
-          <span class="comment-date">21 Apr</span>
-          <span class="comment-sentiment neg">Concern</span>
-        </div>
-        <div class="comment-text">"I love the look but it's above our budget. Is there a close alternative?"</div>
-      </div>
-      <div class="comment-outcome">
-        <strong>Redirected</strong>
-        → Flair Oak
-      </div>
-    </div>
-    <div class="comment">
-      <div class="comment-avatar">MR</div>
-      <div class="comment-body">
-        <div class="comment-head">
-          <span class="comment-name">Markus Richter</span>
-          <span class="comment-date">18 Apr</span>
-          <span class="comment-sentiment pos">Positive</span>
-        </div>
-        <div class="comment-text">"Clean lines, warm wood. This is the direction I want for the whole apartment."</div>
-      </div>
-      <div class="comment-outcome">
-        <strong>Converted</strong>
-        Deposit placed
-      </div>
-    </div>
-    <div class="comment">
-      <div class="comment-avatar">AB</div>
-      <div class="comment-body">
-        <div class="comment-head">
-          <span class="comment-name">Anna Brandt</span>
-          <span class="comment-date">16 Apr</span>
-          <span class="comment-sentiment neu">Mixed</span>
-        </div>
-        <div class="comment-text">"It's beautiful but I wonder if it's too dark for a north-facing room."</div>
-      </div>
-      <div class="comment-outcome">
-        <strong>AR spawned</strong>
-        Lighter variant
-      </div>
-    </div>
+
   </div>
 
 </section>
@@ -5559,6 +5761,426 @@
   subscribeToPins();
   subscribeToVisitSummaries();
   initReferenceImageNotesUI();
+</script>
+
+<!-- ====================================================== -->
+<!-- PRODUCT INSIGHTS · Showroom Flow (spatial) controller   -->
+<!-- Self-contained: wrapped in an IIFE so its globals never  -->
+<!-- collide with the main portal script above.               -->
+<!-- ====================================================== -->
+<script>
+(function () {
+  /* ================================================================
+     SEED DATA — the only two arrays you replace in production.
+     PRODUCTS  -> static floor positions (x,y in the 1000x560 viewBox).
+     SESSIONS  -> one entry per customer session; pins[] in
+                  chronological order.
+     ================================================================ */
+
+  const PRODUCTS = [
+    { id:'senso',  name:'Nobilia Senso',  zone:'Kitchen A', x:150, y:170 },
+    { id:'topos',  name:'Leicht Topos',   zone:'Kitchen A', x:330, y:330 },
+    { id:'laser',  name:'Nobilia Laser',  zone:'Kitchen A', x:520, y:150 },
+    { id:'touch',  name:'Nobilia Touch',  zone:'Kitchen A', x:200, y:440 },
+    { id:'pantry', name:'Chroma Pantry',  zone:'Living · Dining', x:760, y:200 },
+    { id:'carre',  name:'Leicht Carré',   zone:'Living · Dining', x:860, y:400 },
+  ];
+
+  const SESSIONS = [
+    { id:'s-sylvan', customer:'Sylvan Marchetti', color:'#006a61', pins:[
+      { p:'laser',  t:1, s:'neg', dx: 8, dy:-10 },
+      { p:'senso',  t:2, s:'pos', dx:-12, dy: 6 },
+      { p:'topos',  t:3, s:'pos', dx: 10, dy: 8 },
+      { p:'pantry', t:4, s:'pos', dx: 0,  dy:12 },
+      { p:'senso',  t:5, s:'neu', dx: 14, dy:-8 },
+    ]},
+    { id:'s-jonas', customer:'Jonas Hartmann', color:'#131b2e', pins:[
+      { p:'senso',  t:1, s:'pos', dx: 6,  dy: 10 },
+      { p:'touch',  t:2, s:'neu', dx:-8,  dy: 6 },
+      { p:'topos',  t:3, s:'pos', dx:-14, dy:-6 },
+      { p:'carre',  t:4, s:'pos', dx: 4,  dy: 8 },
+    ]},
+    { id:'s-sofia', customer:'Sofia Kovač', color:'#8a6a1f', pins:[
+      { p:'senso',  t:1, s:'neg', dx:-6,  dy:-12 },
+      { p:'touch',  t:2, s:'pos', dx: 10, dy: 4 },
+      { p:'touch',  t:3, s:'pos', dx:-10, dy: 12 },
+      { p:'topos',  t:4, s:'neu', dx: 12, dy:-4 },
+    ]},
+    { id:'s-markus', customer:'Markus Richter', color:'#ba1a1a', pins:[
+      { p:'topos',  t:1, s:'pos', dx: 0,  dy:-12 },
+      { p:'senso',  t:2, s:'pos', dx: 8,  dy: 8 },
+      { p:'pantry', t:3, s:'pos', dx:-10, dy: 6 },
+      { p:'carre',  t:4, s:'pos', dx: 6,  dy:-8 },
+    ]},
+  ];
+
+  const PRODUCT_DETAIL = {
+    senso: {
+      themes: [
+        { label:'Handle-less detail', count:18, type:'pos', quotes:[
+          'I love how this one has no handles at all, it looks so clean.',
+          'The line of the doors is unbroken. It\u2019s really elegant.' ]},
+        { label:'Oak warmth', count:14, type:'pos', quotes:[
+          'The wood feels alive, not like a photo of wood.',
+          'The smoked oak is warmer than I expected. I like that.' ]},
+        { label:'Fingerprint concern', count:6, type:'neg', quotes:[
+          'How does this hold up with two kids at home?',
+          'I can already see fingerprints on the demo unit.' ]},
+        { label:'Price resistance', count:4, type:'neg', quotes:[
+          'It\u2019s gorgeous but it\u2019s at the top of what we planned.',
+          'Is there a similar look in something more affordable?' ]},
+      ]
+    },
+    topos: {
+      themes: [
+        { label:'Dark contrast', count:9, type:'pos', quotes:[
+          'Dark below, something lighter above. It feels warm even though it\u2019s dark.',
+          'The contrast here is exactly what I want.' ]},
+        { label:'Island footprint', count:5, type:'neu', quotes:[
+          'I\u2019m not sure this size fits my kitchen.',
+          'How much clearance do you need around it?' ]},
+      ]
+    },
+    touch: {
+      themes: [
+        { label:'Linen white finish', count:7, type:'pos', quotes:[
+          'This is the softest white, not clinical at all.',
+          'Feels calm. I could live with this every day.' ]},
+        { label:'Reached late', count:3, type:'neu', quotes:[
+          'I almost missed this corner.' ]},
+      ]
+    },
+  };
+  const prodById = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs={}) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+  const sentColor = s => s === 'pos' ? 'var(--secondary)' : s === 'neg' ? 'var(--error)' : 'var(--warning)';
+  const pinXY = pin => { const p = prodById[pin.p]; return { x: p.x + (pin.dx||0), y: p.y + (pin.dy||0) }; };
+
+  /* ---------- state ---------- */
+  let mode = 'route';        // 'route' | 'heat'
+  let scope = 'all';         // 'all' | session id
+
+  /* ---------- static: product reference nodes ---------- */
+  function drawProductNodes() {
+    const g = document.getElementById('productNodes');
+    g.innerHTML = '';
+    PRODUCTS.forEach(p => {
+      g.appendChild(el('rect', { class:'product-node', x:p.x-9, y:p.y-9, width:18, height:18, rx:3 }));
+      const t = el('text', { class:'product-label', x:p.x+14, y:p.y+4 });
+      t.textContent = p.name;
+      g.appendChild(t);
+    });
+  }
+
+  /* ---------- ROUTE layer ---------- */
+  function drawRoutes() {
+    const layer = document.getElementById('layer');
+    layer.innerHTML = '';
+    const sessions = scope === 'all' ? SESSIONS : SESSIONS.filter(s => s.id === scope);
+    const dimmed = scope === 'all' && SESSIONS.length > 1;
+
+    sessions.forEach(sess => {
+      const ordered = [...sess.pins].sort((a,b) => a.t - b.t);
+      const pts = ordered.map(pinXY);
+
+      if (pts.length > 1) {
+        const d = pts.map((pt,i) => (i===0?'M':'L') + pt.x + ',' + pt.y).join(' ');
+        layer.appendChild(el('path', {
+          d, fill:'none', stroke: sess.color,
+          'stroke-width': dimmed ? 1.5 : 2,
+          'stroke-opacity': dimmed ? 0.18 : 0.3,
+          'stroke-linecap':'round', 'stroke-linejoin':'round',
+          'marker-end': scope === 'all' ? '' : 'url(#arrow)'
+        }));
+      }
+
+      ordered.forEach((pin, i) => {
+        const {x,y} = pinXY(pin);
+        layer.appendChild(el('circle', {
+          cx:x, cy:y, r: scope==='all' ? 7 : 11,
+          fill: sentColor(pin.s),
+          stroke:'#fff', 'stroke-width':2,
+          'fill-opacity': dimmed ? 0.7 : 1
+        }));
+        if (scope !== 'all') {
+          const num = el('text', {
+            x, y: y+4, 'text-anchor':'middle',
+            'font-family':'JetBrains Mono, monospace',
+            'font-size':'11', 'font-weight':'600', fill:'#fff'
+          });
+          num.textContent = (i+1);
+          layer.appendChild(num);
+        }
+      });
+    });
+  }
+
+  /* ---------- HEAT layer ---------- */
+  function drawHeat() {
+    const layer = document.getElementById('layer');
+    layer.innerHTML = '';
+
+    const counts = {};
+    SESSIONS.forEach(s => s.pins.forEach(pin => {
+      counts[pin.p] = (counts[pin.p] || 0) + 1;
+    }));
+    const max = Math.max(...Object.values(counts), 1);
+
+    PRODUCTS.forEach(p => {
+      const c = counts[p.id] || 0;
+      if (!c) return;
+      const intensity = c / max;
+      const radius = 55 + intensity * 95;
+      const blob = el('circle', { cx:p.x, cy:p.y, r:radius, fill:'url(#heatGrad)' });
+      blob.style.opacity = (0.35 + intensity * 0.65).toFixed(2);
+      layer.appendChild(blob);
+    });
+
+    PRODUCTS.forEach(p => {
+      const c = counts[p.id] || 0;
+      if (!c) return;
+      const t = el('text', {
+        x:p.x, y:p.y+4, 'text-anchor':'middle',
+        'font-family':'JetBrains Mono, monospace',
+        'font-size':'13', 'font-weight':'600', fill:'#fff'
+      });
+      t.textContent = c;
+      layer.appendChild(t);
+    });
+  }
+
+  /* ---------- legend + callout ---------- */
+  function renderLegend() {
+    const lg = document.getElementById('legend');
+    if (mode === 'route') {
+      lg.innerHTML = `
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--secondary)"></span>Liked</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--error)"></span>Concern</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:var(--warning)"></span>Neutral</span>
+        <span class="legend-item"><span class="legend-line" style="background:var(--primary)"></span>Browsing path (pin order)</span>`;
+    } else {
+      lg.innerHTML = `
+        <span class="legend-item"><span class="legend-swatch" style="background:rgba(19,27,46,0.5)"></span>High reaction density</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:rgba(19,27,46,0.15)"></span>Low density</span>
+        <span class="legend-item">Number = total reactions in 90d</span>`;
+    }
+  }
+
+  function renderCallout() {
+    const c = document.getElementById('callout');
+    if (mode === 'route') {
+      if (scope === 'all') {
+        c.innerHTML = `<strong>Aggregate flow.</strong> Most sessions enter at the <strong>Senso / Topos</strong> cluster and drift toward Living · Dining. The <strong>Touch</strong> corner (lower left) sits off the dominant path, a candidate dead zone worth re-merchandising.`;
+      } else {
+        const s = SESSIONS.find(x => x.id === scope);
+        c.innerHTML = `<strong>${s.customer}.</strong> Numbered stops show the order this customer pinned products. Repeated returns to one product signal sustained interest, not indecision.`;
+      }
+    } else {
+      c.innerHTML = `<strong>Attention density.</strong> Reaction volume is concentrated on <strong>Senso</strong> and <strong>Topos</strong>. <strong>Carré</strong> and <strong>Touch</strong> draw far fewer reactions, useful for deciding what to move to the entry sightline.`;
+    }
+  }
+
+  /* ---------- per-product breakdown table ---------- */
+  function renderBreakdown() {
+    const rows = PRODUCTS.map(p => {
+      let pos=0, neg=0, neu=0, orderSum=0, n=0;
+      SESSIONS.forEach(s => {
+        const ordered = [...s.pins].sort((a,b)=>a.t-b.t);
+        ordered.forEach((pin, idx) => {
+          if (pin.p !== p.id) return;
+          n++; orderSum += (idx+1)/ordered.length;
+          if (pin.s==='pos') pos++; else if (pin.s==='neg') neg++; else neu++;
+        });
+      });
+      const total = pos+neg+neu;
+      const avgOrder = n ? orderSum/n : 0;
+      const dwell = total ? (28 + total*9) : 0;
+      return { p, total, pos, neg, neu, avgOrder, dwell };
+    }).sort((a,b) => b.total - a.total);
+
+    const body = document.getElementById('breakdownBody');
+    body.innerHTML = rows.map(r => {
+      if (!r.total) return '';
+      const posPct = Math.round(r.pos/r.total*100);
+      const negPct = Math.round(r.neg/r.total*100);
+      const orderLabel = r.avgOrder < 0.4 ? 'early' : r.avgOrder > 0.7 ? 'late' : 'mid';
+      const orderCls = orderLabel === 'early' ? 'early' : orderLabel === 'late' ? 'late' : '';
+      const hasDetail = !!PRODUCT_DETAIL[r.p.id];
+      return `<tr class="${hasDetail ? 'clickable' : ''}" data-pid="${r.p.id}">
+        <td><div class="prod-name">${r.p.name}</div><div class="prod-zone">${r.p.zone}</div></td>
+        <td class="num">${r.total}</td>
+        <td>
+          <span class="sent-bar"><span class="sent-pos" style="width:${posPct}%"></span><span class="sent-neg" style="width:${negPct}%"></span></span>
+          <span class="num" style="margin-left:8px;color:var(--on-surface-variant);font-size:11px">${posPct}% / ${negPct}%</span>
+        </td>
+        <td class="num">${r.dwell}s</td>
+        <td><span class="order-pill ${orderCls}">${orderLabel}</span></td>
+      </tr>`;
+    }).join('');
+
+    body.querySelectorAll('tr.clickable').forEach(tr => {
+      tr.addEventListener('click', () => {
+        body.querySelectorAll('tr').forEach(x => x.classList.remove('active'));
+        tr.classList.add('active');
+        openDetail(tr.dataset.pid);
+      });
+    });
+  }
+
+  /* ---------- per-product detail (themes + quotes) ---------- */
+  function openDetail(pid) {
+    const d = PRODUCT_DETAIL[pid];
+    const p = prodById[pid];
+    if (!d) return;
+    const card = document.getElementById('detailCard');
+    document.getElementById('detailTitle').textContent = p.name;
+    document.getElementById('detailSub').textContent = p.zone + ' · what customers said about this product';
+
+    document.getElementById('detailThemes').innerHTML = d.themes.map(t => `
+      <div class="theme ${t.type}">
+        <div class="theme-head">
+          <span class="theme-label">${t.label}</span>
+          <span class="theme-count">${t.count} mentions</span>
+        </div>
+        ${t.quotes.map(q => `<div class="theme-quote">\u201c${q}\u201d</div>`).join('')}
+      </div>`).join('');
+
+    card.classList.remove('hidden');
+    card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  /* ---------- computed route summary ---------- */
+  function renderRouteSummary() {
+    const firstTouch = {}, pairs = {}, reach = {}, returns = {};
+
+    SESSIONS.forEach(s => {
+      const ordered = [...s.pins].sort((a,b)=>a.t-b.t);
+      if (ordered.length) firstTouch[ordered[0].p] = (firstTouch[ordered[0].p]||0)+1;
+      const seen = new Set();
+      const inSession = {};
+      ordered.forEach((pin, i) => {
+        seen.add(pin.p);
+        inSession[pin.p] = (inSession[pin.p]||0)+1;
+        if (i>0) {
+          const key = ordered[i-1].p + '>' + pin.p;
+          if (ordered[i-1].p !== pin.p) pairs[key] = (pairs[key]||0)+1;
+        }
+      });
+      seen.forEach(p => reach[p] = (reach[p]||0)+1);
+      Object.entries(inSession).forEach(([p,c]) => { if (c>1) returns[p] = (returns[p]||0)+1; });
+    });
+
+    const topKey = obj => Object.entries(obj).sort((a,b)=>b[1]-a[1])[0];
+    const nm = id => prodById[id] ? prodById[id].name : id;
+
+    const [hookId, hookN] = topKey(firstTouch) || [null,0];
+    const seqTop = topKey(pairs);
+    const [seqA, seqB] = seqTop ? seqTop[0].split('>') : [null,null];
+    const seqN = seqTop ? seqTop[1] : 0;
+    const delTop = topKey(returns);
+    const reachAll = PRODUCTS.map(p => [p.id, reach[p.id]||0]).sort((a,b)=>a[1]-b[1]);
+    const [coldId, coldN] = reachAll[0];
+
+    const total = SESSIONS.length;
+    document.getElementById('sessCount').textContent = total;
+
+    const items = [
+      {
+        kicker: 'Entry hook',
+        head: nm(hookId),
+        body: `Pinned first in ${hookN} of ${total} sessions. This is what pulls customers in from the door, so it earns its front-of-floor position.`
+      },
+      {
+        kicker: 'Strongest sequence',
+        head: `${nm(seqA)} → ${nm(seqB)}`,
+        body: `${seqN} customers moved straight from one to the other. Worth placing them adjacent, or bundling as a recommendation set.`
+      },
+      {
+        kicker: 'Deliberation signal',
+        head: delTop ? nm(delTop[0]) : '—',
+        body: delTop
+          ? `${delTop[1]} customer${delTop[1]>1?'s':''} circled back to it within a single visit. Returning to a product is a buying signal or a sticking point, flag it live for the salesperson.`
+          : 'No repeated returns yet this period.'
+      },
+      {
+        kicker: 'Underexposed',
+        head: nm(coldId),
+        body: `Reached in only ${coldN} of ${total} sessions, often late in the visit. A candidate to relocate toward the dominant path.`
+      },
+    ];
+
+    document.getElementById('summaryGrid').innerHTML = items.map(it => `
+      <div class="summary-item">
+        <div class="summary-kicker">${it.kicker}</div>
+        <div class="summary-headline">${it.head}</div>
+        <div class="summary-body">${it.body}</div>
+      </div>`).join('');
+  }
+
+  /* ---------- master render ---------- */
+  function render() {
+    document.getElementById('scopeRow').classList.toggle('hidden', mode !== 'route');
+    document.getElementById('cardSub').textContent = mode === 'route'
+      ? 'Browsing routes reconstructed from pin order across sessions'
+      : 'Reaction density aggregated by product position';
+    if (mode === 'route') drawRoutes(); else drawHeat();
+    renderLegend();
+    renderCallout();
+  }
+
+  /* ---------- scope chips ---------- */
+  function buildScopeChips() {
+    const wrap = document.getElementById('scopeChips');
+    const all = `<button class="scope-chip on" data-scope="all">All customers</button>`;
+    const each = SESSIONS.map(s =>
+      `<button class="scope-chip" data-scope="${s.id}"><span class="dot" style="background:${s.color}"></span>${s.customer.split(' ')[0]}</button>`
+    ).join('');
+    wrap.innerHTML = all + each;
+    wrap.querySelectorAll('.scope-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        wrap.querySelectorAll('.scope-chip').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        scope = b.dataset.scope;
+        render();
+      });
+    });
+  }
+
+  /* ---------- mode toggle ---------- */
+  document.getElementById('modeRoute').addEventListener('click', () => {
+    mode = 'route';
+    document.getElementById('modeRoute').classList.add('on');
+    document.getElementById('modeRoute').setAttribute('aria-selected','true');
+    document.getElementById('modeHeat').classList.remove('on');
+    document.getElementById('modeHeat').setAttribute('aria-selected','false');
+    render();
+  });
+  document.getElementById('modeHeat').addEventListener('click', () => {
+    mode = 'heat';
+    document.getElementById('modeHeat').classList.add('on');
+    document.getElementById('modeHeat').setAttribute('aria-selected','true');
+    document.getElementById('modeRoute').classList.remove('on');
+    document.getElementById('modeRoute').setAttribute('aria-selected','false');
+    render();
+  });
+
+  /* ---------- init ---------- */
+  document.getElementById('detailClose').addEventListener('click', () => {
+    document.getElementById('detailCard').classList.add('hidden');
+    document.querySelectorAll('#breakdownBody tr').forEach(x => x.classList.remove('active'));
+  });
+
+  drawProductNodes();
+  buildScopeChips();
+  renderBreakdown();
+  renderRouteSummary();
+  render();
+})();
 </script>
 
 </body>
