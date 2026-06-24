@@ -2640,6 +2640,9 @@
   #view-product .map-surface {
     position: relative;
     width: 100%;
+    /* override the global .map-surface height:280px so the floor-plan
+       SVG (scaled by width) isn't clipped at the bottom on iPad/web */
+    height: auto;
     border-radius: var(--r);
     border: 1px solid var(--outline-variant);
     overflow: hidden;
