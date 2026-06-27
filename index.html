@@ -3891,6 +3891,19 @@
     return false;
   }
 
+  function removeBrief(pinId) {
+    if (!pinId) return;
+    const pendingTimer = showroomState.refreshTimers.get(pinId);
+    if (pendingTimer) clearTimeout(pendingTimer);
+    showroomState.refreshTimers.delete(pinId);
+    const before = showroomState.briefs.length;
+    showroomState.briefs = showroomState.briefs.filter(brief => brief.id !== pinId);
+    if (showroomState.briefs.length !== before) {
+      renderShowroomBriefs();
+      scheduleVisitSummarySync();
+    }
+  }
+
   function renderMatchCard(match, pinId) {
     const product = match.product || {};
     const name = product.name || 'Recommended product';
@@ -4154,6 +4167,9 @@
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, payload => {
         schedulePinRefresh(payload.new?.id, false, 700);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pins' }, payload => {
+        removeBrief(payload.old?.id);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pin_recommendations' }, payload => {
         const pinId = payload.new?.pin_id || payload.old?.pin_id;
