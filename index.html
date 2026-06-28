@@ -2826,7 +2826,7 @@
       <circle cx="12" cy="12" r="3"/>
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
     </svg>
-    <span>Showroom Floor</span>
+    <span>Showroom Live</span>
     <span class="nav-badge">2</span>
   </button>
 
@@ -2845,7 +2845,7 @@
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
       <polyline points="9 22 9 12 15 12 15 22"/>
     </svg>
-    <span>Product Insights</span>
+    <span>Showroom Insights</span>
   </button>
 
   <div class="nav-section-label">System</div>
@@ -3173,10 +3173,8 @@
           </div>
           <div class="map-wrap">
             <div class="map-surface">
-              <div class="room" style="top:8%; left:6%; width:88%; height:40%"></div>
-              <span class="room-label" style="top:10%; left:8%">Kitchen A</span>
-              <div class="room" style="top:54%; left:6%; width:88%; height:38%"></div>
-              <span class="room-label" style="top:56%; left:8%">Living · Dining</span>
+              <div class="room" style="top:8%; left:6%; width:88%; height:84%"></div>
+              <span class="room-label" style="top:10%; left:8%">Showroom A 10m*10m</span>
 
               <div class="pin positive" style="top:22%; left:18%"><div class="pin-dot"></div></div>
               <div class="pin positive" style="top:30%; left:34%"><div class="pin-dot"></div></div>
@@ -3611,13 +3609,13 @@
 
   <div class="wrap">
 
-    <div class="eyebrow">Product Insights · showroom flow · last 90 days</div>
+    <div class="eyebrow">Showroom Insights · showroom flow · last 90 days</div>
     <h1 class="page-title">How customers move, and where attention lands</h1>
 
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">Showroom floor</div>
+          <div class="card-title">Showroom live</div>
           <div class="card-sub" id="cardSub">Browsing routes reconstructed from pin order across sessions</div>
         </div>
         <div class="toggle-group" role="tablist" aria-label="Layer">
@@ -4017,7 +4015,7 @@
     const neutral = total - positives - concerns;
     liveEyebrow.innerHTML = '<span class="eyebrow-dot"></span>Live SnapCloud feed';
     liveTitle.textContent = total ? 'Showroom spatial briefs are landing' : 'Waiting for Snap Spectacles data';
-    liveMeta.innerHTML = '<strong>Kitchen A · Showroom Floor</strong>' + total + ' briefs · ' + positives + ' liked · ' + concerns + ' concerns<br>' + neutral + ' neutral · live updates enabled';
+    liveMeta.innerHTML = '<strong>Showroom A 10m*10m</strong>' + total + ' briefs · ' + positives + ' liked · ' + concerns + ' concerns<br>' + neutral + ' neutral · live updates enabled';
     statusMeta.textContent = total ? 'Live · ' + total + ' briefs' : 'Live · waiting for first brief';
   }
 
@@ -4213,7 +4211,7 @@
   const MAX_SESSION_SUMMARY_TABS = 4;
   const SUMMARY_REC_PREVIEW = 6;
   const DEFAULT_SUMMARY_CUSTOMER_NAME = 'Sylvan Marchetti';
-  const SHOWROOM_FLOOR_LABEL = 'Kitchen A';
+  const SHOWROOM_FLOOR_LABEL = 'Showroom A 10m*10m';
   let visitSummarySyncTimer = null;
   let sessionSummaryCropsChannel = null;
 
