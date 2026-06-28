@@ -3635,7 +3635,7 @@
 
       <div class="map-wrap">
         <div class="map-surface">
-          <svg class="floor" viewBox="0 0 1000 560" id="floor" xmlns="http://www.w3.org/2000/svg">
+          <svg class="floor" viewBox="0 0 640 640" id="floor" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <radialGradient id="heatGrad">
                 <stop offset="0%"  stop-color="#131b2e" stop-opacity="0.55"/>
@@ -3649,7 +3649,7 @@
 
             <!-- showroom area (static), echoing the live spatial map -->
             <g id="rooms">
-              <rect class="room-rect" x="40" y="40" width="920" height="480" rx="3"/>
+              <rect class="room-rect" x="40" y="40" width="560" height="560" rx="3"/>
               <text class="room-tag" x="58" y="68">Showroom A 10m*10m</text>
             </g>
 
@@ -5798,18 +5798,18 @@
 (function () {
   /* ================================================================
      SEED DATA — the only two arrays you replace in production.
-     PRODUCTS  -> static floor positions (x,y in the 1000x560 viewBox).
+     PRODUCTS  -> static floor positions (x,y in the 640x640 viewBox).
      SESSIONS  -> one entry per customer session; pins[] in
                   chronological order.
      ================================================================ */
 
   const PRODUCTS = [
-    { id:'senso',  name:'Nobilia Senso',  zone:'Showroom A 10m*10m', x:150, y:170 },
-    { id:'topos',  name:'Leicht Topos',   zone:'Showroom A 10m*10m', x:330, y:330 },
-    { id:'laser',  name:'Nobilia Laser',  zone:'Showroom A 10m*10m', x:520, y:150 },
-    { id:'touch',  name:'Nobilia Touch',  zone:'Showroom A 10m*10m', x:200, y:440 },
-    { id:'pantry', name:'Chroma Pantry',  zone:'Showroom A 10m*10m', x:760, y:200 },
-    { id:'carre',  name:'Leicht Carré',   zone:'Showroom A 10m*10m', x:860, y:400 },
+    { id:'senso',  name:'Nobilia Senso',  zone:'Showroom A 10m*10m', x:107, y:192 },
+    { id:'topos',  name:'Leicht Topos',   zone:'Showroom A 10m*10m', x:217, y:378 },
+    { id:'laser',  name:'Nobilia Laser',  zone:'Showroom A 10m*10m', x:332, y:168 },
+    { id:'touch',  name:'Nobilia Touch',  zone:'Showroom A 10m*10m', x:137, y:507 },
+    { id:'pantry', name:'Chroma Pantry',  zone:'Showroom A 10m*10m', x:478, y:227 },
+    { id:'carre',  name:'Leicht Carré',   zone:'Showroom A 10m*10m', x:539, y:460 },
   ];
 
   const SESSIONS = [
