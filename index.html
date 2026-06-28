@@ -2957,7 +2957,7 @@
                 <span class="capture-badge">Spatial</span>
               </div>
               <div class="note-content">
-                <div class="note-product">Kitchen A · Nobilia Senso · Smoked oak</div>
+                <div class="note-product">Showroom A 10m*10m · Nobilia Senso · Smoked oak</div>
                 <div class="note-headline">The handle detail is beautiful.</div>
                 <div class="note-transcript">"I love how this one has no handles at all, it looks so clean. But I'm worried about fingerprints, how does this actually hold up with two kids at home?"</div>
                 <div class="note-actions">
@@ -3026,7 +3026,7 @@
                 <span class="capture-badge">Spatial</span>
               </div>
               <div class="note-content">
-                <div class="note-product">Kitchen A · Leicht Topos · Graphite</div>
+                <div class="note-product">Showroom A 10m*10m · Leicht Topos · Graphite</div>
                 <div class="note-headline">This dark island feels grounded.</div>
                 <div class="note-transcript">"The contrast here is exactly what I want. Dark below, something lighter above. It feels warm even though it's dark, you know what I mean?"</div>
                 <div class="note-actions">
@@ -3151,7 +3151,7 @@
                 <span class="capture-badge">Spatial</span>
               </div>
               <div class="note-content">
-                <div class="note-product">Kitchen A · Nobilia Laser Soft · High gloss white</div>
+                <div class="note-product">Showroom A 10m*10m · Nobilia Laser Soft · High gloss white</div>
                 <div class="note-headline">Too clinical for us.</div>
                 <div class="note-transcript">"This is exactly what I don't want. It's cold. It looks like a hospital. My husband would say it's modern but I think it has no soul."</div>
                 <div class="note-actions">
@@ -3646,12 +3646,10 @@
               </marker>
             </defs>
 
-            <!-- rooms (static), echoing your live spatial map -->
+            <!-- showroom area (static), echoing the live spatial map -->
             <g id="rooms">
-              <rect class="room-rect" x="40"  y="40"  width="560" height="480" rx="3"/>
-              <text class="room-tag" x="58" y="68">KITCHEN A</text>
-              <rect class="room-rect" x="640" y="40"  width="320" height="480" rx="3"/>
-              <text class="room-tag" x="658" y="68">LIVING · DINING</text>
+              <rect class="room-rect" x="40" y="40" width="920" height="480" rx="3"/>
+              <text class="room-tag" x="58" y="68">Showroom A 10m*10m</text>
             </g>
 
             <!-- product nodes (static reference markers) -->
@@ -3968,7 +3966,7 @@
             <span class="capture-badge">Spatial</span>
           </div>
           <div class="note-content">
-            <div class="note-product">Kitchen A · ${escapeHtml(brief.detectedProduct)}</div>
+            <div class="note-product">Showroom A 10m*10m · ${escapeHtml(brief.detectedProduct)}</div>
             <div class="note-headline">${escapeHtml(brief.summary)}</div>
             ${brief.transcript ? '<div class="note-transcript">"' + escapeHtml(brief.transcript) + '"</div>' : ''}
             <div class="note-actions">
@@ -5805,12 +5803,12 @@
      ================================================================ */
 
   const PRODUCTS = [
-    { id:'senso',  name:'Nobilia Senso',  zone:'Kitchen A', x:150, y:170 },
-    { id:'topos',  name:'Leicht Topos',   zone:'Kitchen A', x:330, y:330 },
-    { id:'laser',  name:'Nobilia Laser',  zone:'Kitchen A', x:520, y:150 },
-    { id:'touch',  name:'Nobilia Touch',  zone:'Kitchen A', x:200, y:440 },
-    { id:'pantry', name:'Chroma Pantry',  zone:'Living · Dining', x:760, y:200 },
-    { id:'carre',  name:'Leicht Carré',   zone:'Living · Dining', x:860, y:400 },
+    { id:'senso',  name:'Nobilia Senso',  zone:'Showroom A 10m*10m', x:150, y:170 },
+    { id:'topos',  name:'Leicht Topos',   zone:'Showroom A 10m*10m', x:330, y:330 },
+    { id:'laser',  name:'Nobilia Laser',  zone:'Showroom A 10m*10m', x:520, y:150 },
+    { id:'touch',  name:'Nobilia Touch',  zone:'Showroom A 10m*10m', x:200, y:440 },
+    { id:'pantry', name:'Chroma Pantry',  zone:'Showroom A 10m*10m', x:760, y:200 },
+    { id:'carre',  name:'Leicht Carré',   zone:'Showroom A 10m*10m', x:860, y:400 },
   ];
 
   const SESSIONS = [
@@ -6002,7 +6000,7 @@
     const c = document.getElementById('callout');
     if (mode === 'route') {
       if (scope === 'all') {
-        c.innerHTML = `<strong>Aggregate flow.</strong> Most sessions enter at the <strong>Senso / Topos</strong> cluster and drift toward Living · Dining. The <strong>Touch</strong> corner (lower left) sits off the dominant path, a candidate dead zone worth re-merchandising.`;
+        c.innerHTML = `<strong>Aggregate flow.</strong> Most sessions enter at the <strong>Senso / Topos</strong> cluster and drift across Showroom A. The <strong>Touch</strong> corner (lower left) sits off the dominant path, a candidate dead zone worth re-merchandising.`;
       } else {
         const s = SESSIONS.find(x => x.id === scope);
         c.innerHTML = `<strong>${s.customer}.</strong> Numbered stops show the order this customer pinned products. Repeated returns to one product signal sustained interest, not indecision.`;
