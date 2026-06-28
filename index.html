@@ -5617,7 +5617,7 @@
     return `webportal-${label}-${fallbackProductId(productName)}`;
   }
 
-  async function createARSpawnRequest(card, fallbackName) {
+  async function createARSpawnRequest(card, fallbackName, status = 'pending') {
     if (!supabaseClient) throw new Error('Supabase client failed to load.');
 
     const productName = arProductName(card, fallbackName);
@@ -5627,15 +5627,16 @@
       : fallbackProductId(productName);
 
     // This row is the handoff from the web portal to the Spectacles app.
-    // Spectacles listens for `pending` requests, claims one, and downloads
-    // the GLB at `original_model_3d_url` to spawn in front of the user.
+    // `status: 'pending'` asks Spectacles to download the GLB at
+    // `original_model_3d_url` and spawn it; `status: 'remove_pending'` asks it
+    // to despawn the model previously spawned for this pin_id + product_id.
     const modelUrl = card.dataset.modelUrl || '';
     const request = {
       id: crypto.randomUUID(),
       pin_id: fallbackPinId(card, productName),
       product_id: productId,
       original_model_3d_url: modelUrl || null,
-      status: 'pending'
+      status: status
     };
 
     if (!request.pin_id || !request.product_id) {
@@ -5656,14 +5657,25 @@
     const wasSpawned = card.classList.contains('spawned');
     const spawnBtn = card.querySelector('.match-spawn');
     if (wasSpawned) {
-      card.classList.remove('spawned');
-      spawnBtn.textContent = 'Spawn in AR';
-      showToast(productName + ' is ready to send again');
+      spawnBtn.disabled = true;
+      spawnBtn.textContent = 'Removing...';
+      try {
+        await createARSpawnRequest(card, fallbackName, 'remove_pending');
+        card.classList.remove('spawned');
+        spawnBtn.disabled = false;
+        spawnBtn.textContent = 'Spawn in AR';
+        showToast(productName + ' removed from AR');
+      } catch (error) {
+        console.error(error);
+        spawnBtn.disabled = false;
+        spawnBtn.textContent = 'Request sent';
+        showToast('Could not remove AR model.');
+      }
     } else {
       spawnBtn.disabled = true;
       spawnBtn.textContent = 'Sending...';
       try {
-        await createARSpawnRequest(card, fallbackName);
+        await createARSpawnRequest(card, fallbackName, 'pending');
         card.classList.add('spawned');
         spawnBtn.disabled = false;
         spawnBtn.textContent = 'Request sent';
