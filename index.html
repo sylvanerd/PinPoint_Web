@@ -3830,6 +3830,14 @@
     return number <= 1 ? Math.round(number * 100) + '%' : Math.round(number) + '%';
   }
 
+  const MIN_RECOMMENDATION_SCORE = 0.4;
+
+  function normalizedMatchScore(score) {
+    const number = Number(score ?? 0);
+    if (Number.isNaN(number)) return 0;
+    return number > 1 ? number / 100 : number;
+  }
+
   function normalizeRecommendation(row) {
     const product = Array.isArray(row.products) ? row.products[0] : row.products;
     return {
@@ -4065,7 +4073,9 @@
       }
     }
 
-    (data || []).forEach(row => {
+    data = (data || []).filter(row => normalizedMatchScore(row.match_score) > MIN_RECOMMENDATION_SCORE);
+
+    data.forEach(row => {
       if (!grouped.has(row.pin_id)) grouped.set(row.pin_id, []);
       grouped.get(row.pin_id).push(row);
     });
