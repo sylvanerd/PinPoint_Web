@@ -4027,18 +4027,9 @@
             <span class="card-tag live">Live</span>
           </div>
           <div class="map-wrap">
-            <div class="map-surface">
-              <div class="room" style="top:8%; left:6%; width:88%; height:84%"></div>
-              <span class="room-label" style="top:10%; left:8%">Showroom A 10m*10m</span>
-
-              <div class="pin positive" style="top:22%; left:18%"><div class="pin-dot"></div></div>
-              <div class="pin positive" style="top:30%; left:34%"><div class="pin-dot"></div></div>
-              <div class="pin negative" style="top:25%; left:54%"><div class="pin-dot"></div></div>
-              <div class="pin positive" style="top:32%; left:74%"><div class="pin-dot"></div></div>
-              <div class="pin neutral" style="top:70%; left:28%"><div class="pin-dot"></div></div>
-              <div class="pin active neutral" style="top:72%; left:62%"><div class="pin-dot"></div></div>
-
-              <div class="customer-marker" style="top:72%; left:62%"></div>
+            <div class="map-surface" style="height:auto; aspect-ratio:1 / 1;">
+              <span class="room-label" style="top:10px; left:10px; z-index:2;">Showroom A 10m*10m · route</span>
+              <svg id="routeMapSvg" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style="position:absolute; inset:0; width:100%; height:100%;"></svg>
             </div>
           </div>
           <div class="map-legend">
@@ -5336,6 +5327,145 @@
     return 'Just pinned';
   }
 
+  // ===== Live route map (top-down numbered polyline from pin spatial_position) =====
+  const ROUTE_SVG_NS = 'http://www.w3.org/2000/svg';
+  const ROUTE_VIEW = 300; // square 1:1 canvas in viewBox units
+  const ROUTE_PADDING = 0.1; // ~10% so pins never touch the edge
+  // Nominal bounds: 5m by 5m box, x lateral centered on entry, z depth into the set.
+  const ROUTE_NOMINAL_HALF_X = 2.5; // metres each side of entry
+  const ROUTE_NOMINAL_DEPTH = 5;    // metres of depth
+  const ROUTE_SENTIMENT_COLOR = { pos: '#006a61', neg: '#ba1a1a', neu: '#8a6a1f' };
+  const ROUTE_NAME_MAX = 20;
+
+  // Re-project a session's positioned pins into square canvas coordinates.
+  // Origin = earliest pin (bottom-center); depth runs upward. Expand-only bounds
+  // grow outward from nominal, kept symmetric on X so the entry stays centered
+  // and a uniform scale never distorts a square set or overflows the canvas.
+  function projectRoute(briefs) {
+    const sessionId = getTrackedSessionId();
+    const points = briefs
+      .filter(b => Number.isFinite(b.posX) && Number.isFinite(b.posZ))
+      .filter(b => !sessionId || b.sessionId === sessionId)
+      .slice()
+      .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+
+    if (!points.length) return { stops: [] };
+
+    const origin = { x: points[0].posX, z: points[0].posZ };
+    const rel = points.map(b => ({ brief: b, x: b.posX - origin.x, z: b.posZ - origin.z }));
+
+    // Expand-only bounds (never shrink below nominal). X stays symmetric about entry.
+    let halfX = ROUTE_NOMINAL_HALF_X;
+    let zMax = ROUTE_NOMINAL_DEPTH;
+    let zMin = 0;
+    rel.forEach(p => {
+      halfX = Math.max(halfX, Math.abs(p.x));
+      zMax = Math.max(zMax, p.z);
+      zMin = Math.min(zMin, p.z);
+    });
+
+    const boundsW = halfX * 2;
+    const boundsH = zMax - zMin;
+    const inner = ROUTE_VIEW * (1 - 2 * ROUTE_PADDING);
+    const scale = Math.min(inner / boundsW, inner / boundsH); // single uniform scale, both axes
+
+    const centerX = ROUTE_VIEW / 2;
+    const floorBottom = ROUTE_VIEW * (1 - ROUTE_PADDING);
+    const stops = rel.map((p, i) => ({
+      index: i + 1,
+      brief: p.brief,
+      cx: centerX + p.x * scale,
+      cy: floorBottom - (p.z - zMin) * scale
+    }));
+    return { stops };
+  }
+
+  function routeSvgEl(name, attrs) {
+    const node = document.createElementNS(ROUTE_SVG_NS, name);
+    Object.keys(attrs || {}).forEach(k => node.setAttribute(k, attrs[k]));
+    return node;
+  }
+
+  function renderRouteMap() {
+    const svg = document.getElementById('routeMapSvg');
+    if (!svg) return;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    // Room border
+    svg.appendChild(routeSvgEl('rect', {
+      x: 8, y: 8, width: ROUTE_VIEW - 16, height: ROUTE_VIEW - 16,
+      rx: 4, fill: 'none', stroke: '#c6c6cd', 'stroke-width': 1.5
+    }));
+
+    const { stops } = projectRoute(showroomState.briefs);
+
+    if (!stops.length) {
+      const empty = routeSvgEl('text', {
+        x: ROUTE_VIEW / 2, y: ROUTE_VIEW / 2, 'text-anchor': 'middle',
+        fill: '#45464d', 'font-size': 11
+      });
+      empty.textContent = 'Waiting for positioned pins…';
+      svg.appendChild(empty);
+      return;
+    }
+
+    // Ordered polyline connecting the stops
+    if (stops.length > 1) {
+      const d = stops.map((s, i) => (i === 0 ? 'M' : 'L') + s.cx.toFixed(1) + ',' + s.cy.toFixed(1)).join(' ');
+      svg.appendChild(routeSvgEl('path', {
+        d, fill: 'none', stroke: '#131b2e', 'stroke-width': 1.5,
+        'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+        'stroke-dasharray': '4 3', opacity: 0.55
+      }));
+    }
+
+    stops.forEach((s, i) => {
+      const cls = sentimentClass(s.brief.sentiment);
+      const color = ROUTE_SENTIMENT_COLOR[cls] || ROUTE_SENTIMENT_COLOR.neu;
+      const isLatest = i === stops.length - 1;
+
+      // Pulsing accent ring on the most recent engagement
+      if (isLatest) {
+        svg.appendChild(routeSvgEl('circle', {
+          cx: s.cx, cy: s.cy, r: 13, fill: 'none',
+          stroke: color, 'stroke-width': 1.2, opacity: 0.4
+        }));
+      }
+
+      // Sentiment-colored numbered stop
+      const dot = routeSvgEl('circle', {
+        cx: s.cx, cy: s.cy, r: 8, fill: color, stroke: '#ffffff', 'stroke-width': 2
+      });
+      const dotTitle = routeSvgEl('title', {});
+      dotTitle.textContent = (s.brief.detectedProduct || 'Pin') + ' — ' + sentimentLabel(s.brief.sentiment);
+      dot.appendChild(dotTitle);
+      svg.appendChild(dot);
+
+      const num = routeSvgEl('text', {
+        x: s.cx, y: s.cy, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        fill: '#ffffff', 'font-size': 9, 'font-weight': 700
+      });
+      num.textContent = String(s.index);
+      svg.appendChild(num);
+
+      // Small product NAME label (truncated so long names stay inside the map)
+      const rawName = s.brief.detectedProduct;
+      if (rawName && rawName !== 'Detected product') {
+        const nearRight = s.cx > ROUTE_VIEW * 0.7;
+        const label = routeSvgEl('text', {
+          x: s.cx + (nearRight ? -11 : 11), y: s.cy + 3,
+          'text-anchor': nearRight ? 'end' : 'start',
+          fill: '#45464d', 'font-size': 8, 'font-weight': 600
+        });
+        label.textContent = rawName.length > ROUTE_NAME_MAX ? rawName.slice(0, ROUTE_NAME_MAX - 1) + '…' : rawName;
+        const labelTitle = routeSvgEl('title', {});
+        labelTitle.textContent = rawName;
+        label.appendChild(labelTitle);
+        svg.appendChild(label);
+      }
+    });
+  }
+
   function matchScoreLabel(score) {
     if (score === null || score === undefined || score === '') return '';
     const number = Number(score);
@@ -5363,7 +5493,23 @@
     };
   }
 
+  // spatial_position is raw Lens Studio world coords in centimeters, Y-up.
+  // Drop the vertical (y) axis, keep x (lateral) / z (depth), convert cm -> meters.
+  function parseSpatialPosition(raw) {
+    if (raw === null || raw === undefined) return null;
+    let obj = raw;
+    if (typeof raw === 'string') {
+      try { obj = JSON.parse(raw); } catch (_) { return null; }
+    }
+    if (!obj || typeof obj !== 'object') return null;
+    const x = Number(obj.x);
+    const z = Number(obj.z);
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    return { posX: x / 100, posZ: z / 100 };
+  }
+
   function normalizePin(row, recommendations = []) {
+    const pos = parseSpatialPosition(row.spatial_position);
     return {
       id: row.id,
       sessionId: row.session_id || '',
@@ -5374,6 +5520,8 @@
       transcript: row.transcribe_text || '',
       sentiment: row.sentiment || 'neutral',
       imageUrl: row.image_url || '',
+      posX: pos ? pos.posX : null,
+      posZ: pos ? pos.posZ : null,
       createdAt: row.created_at,
       recommendations: recommendations.map(normalizeRecommendation)
     };
@@ -5389,6 +5537,8 @@
       transcript: incoming.transcript || existing.transcript,
       sentiment: incoming.sentiment !== 'neutral' ? incoming.sentiment : existing.sentiment,
       imageUrl: incoming.imageUrl || existing.imageUrl,
+      posX: existing.posX != null ? existing.posX : incoming.posX,
+      posZ: existing.posZ != null ? existing.posZ : incoming.posZ,
       createdAt: existing.createdAt || incoming.createdAt,
       recommendations: incoming.recommendations.length ? incoming.recommendations : existing.recommendations
     };
@@ -5513,14 +5663,17 @@
     if (!showroomState.briefs.length) {
       noteFeed.innerHTML = '<div class="feed-state">Waiting for spatial briefs from SnapCloud...</div>';
       updateLiveHeader();
+      renderRouteMap();
       return;
     }
     if (!briefs.length) {
       noteFeed.innerHTML = '<div class="feed-state">No spatial briefs match this filter yet.</div>';
+      renderRouteMap();
       return;
     }
     noteFeed.innerHTML = briefs.map(renderBriefCard).join('');
     updateLiveHeader();
+    renderRouteMap();
   }
 
   function updateLiveHeader() {
@@ -5595,10 +5748,58 @@
     return grouped;
   }
 
+  // ===== Demo route (no Spectacles required) =====
+  // Pre-seeded fake customer whose fabricated spatial_position (cm) traces a
+  // plausible route. Flows through the identical normalizePin -> briefs -> render path.
+  const DEMO_ROUTE_FALLBACK = true;
+  const DEMO_ROUTE_BASE = { x: 42.15, y: -75.2, z: 18.6 }; // arbitrary world origin in cm
+  const DEMO_ROUTE_PATH = [
+    { dx: 0.0, dz: 0.0, sentiment: 'positive', product: 'Nobilia Senso Smoked Oak' },
+    { dx: 1.1, dz: 1.4, sentiment: 'positive', product: 'Leicht Topos Carbon' },
+    { dx: -0.9, dz: 2.5, sentiment: 'negative', product: 'SieMatic Pure Handleless' },
+    { dx: 0.6, dz: 3.7, sentiment: 'neutral', product: 'Bulthaup B3 Island Oak' },
+    { dx: 1.8, dz: 5.3, sentiment: 'positive', product: 'Nobilia Touch Graphite' },
+    { dx: -1.4, dz: 6.1, sentiment: 'neutral', product: 'Leicht Valais Fenix Matte' }
+  ];
+
+  function buildDemoPinRows() {
+    const now = Date.now();
+    const total = DEMO_ROUTE_PATH.length;
+    return DEMO_ROUTE_PATH.map((p, i) => {
+      const ts = new Date(now - (total - i) * 40000).toISOString();
+      return {
+        id: 'demo-pin-' + (i + 1),
+        session_id: 'demo-session',
+        customer_id: 'demo-customer',
+        anchor_id: 'demo-pin-' + (i + 1),
+        detected_product: p.product,
+        summary_text: '',
+        transcribe_text: '',
+        sentiment: p.sentiment,
+        image_url: '',
+        spatial_position: {
+          x: DEMO_ROUTE_BASE.x + p.dx * 100,
+          y: DEMO_ROUTE_BASE.y,
+          z: DEMO_ROUTE_BASE.z + p.dz * 100
+        },
+        created_at: ts,
+        updated_at: ts
+      };
+    });
+  }
+
+  function seedDemoRoute() {
+    showroomState.briefs = [];
+    buildDemoPinRows().forEach(row => upsertBrief(normalizePin(row, [])));
+    renderShowroomBriefs();
+  }
+  window.pinpointSeedDemoRoute = seedDemoRoute;
+
   async function loadInitialPins() {
     if (!noteFeed) return;
     if (!supabaseClient) {
       noteFeed.innerHTML = '<div class="feed-state">Supabase client could not load. Check your internet connection and refresh.</div>';
+      if (DEMO_ROUTE_FALLBACK) seedDemoRoute();
       return;
     }
     noteFeed.innerHTML = '<div class="feed-state">Connecting to SnapCloud...</div>';
@@ -5626,6 +5827,10 @@
     pinRows.forEach(pin => {
       upsertBrief(normalizePin(pin, recommendationsByPin.get(pin.id) || []));
     });
+    if (DEMO_ROUTE_FALLBACK && !showroomState.briefs.length) {
+      seedDemoRoute();
+      return;
+    }
     renderShowroomBriefs();
     scheduleVisitSummarySync();
   }
