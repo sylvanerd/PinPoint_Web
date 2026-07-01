@@ -28,41 +28,9 @@ The portal has three tabs in the left sidebar:
 
 ### Export PDF (works immediately)
 
-**Export PDF** generates and downloads a vector PDF directly (pdfmake) — sharp text, proper margins, no screenshot blur. If the library fails to load from `file://`, run `python3 -m http.server 8080` and open `http://localhost:8080`.
+**Export PDF** generates and downloads a vector PDF directly 
 
 ### Send recap email (composer + backend)
-
-**Send recap to customer** opens a composer modal:
-
-1. **To** — pre-filled from Consent Settings if the customer left an email; otherwise enter it manually (fully editable).
-2. **Subject** and **Message** — pre-written sales recap based on the session; edit freely before sending.
-3. **Send email** — dispatches via the Snap Cloud edge function (see below).
-
-Browsers cannot send email on their own. One-time setup:
-
-| Item | Purpose |
-|------|---------|
-| **Customer email** | Collected in **Consent Settings** (recap opt-in checkbox + email field) |
-| **Resend account** | Free tier works for demos — sign up at [resend.com](https://resend.com) |
-| **Resend API key** | Dashboard → API Keys → create key |
-| **Sender address** | A verified domain email, e.g. `PinPoint <recap@yourshowroom.com>` |
-
-**Resend testing without a custom domain:** Resend provides `onboarding@resend.dev` as the default sender, but on the free tier it only delivers to the email address on your Resend account. To email real customers, verify your showroom domain in Resend.
-
-**Deploy the edge function to Snap Cloud:**
-
-```bash
-cd PinPoint_Web
-
-# Set secrets on your Snap Cloud / Supabase project
-supabase secrets set RESEND_API_KEY=re_xxxxxxxx
-supabase secrets set RECAP_FROM_EMAIL="PinPoint <recap@yourdomain.com>"
-
-# Deploy
-supabase functions deploy send-session-recap
-```
-
-The function lives at [`supabase/functions/send-session-recap/index.ts`](supabase/functions/send-session-recap/index.ts).
 
 **Send recap to customer** opens a short cover-note composer. The full visit recap is attached as a PDF (same file as **Export PDF**). Deploy the edge function to deliver email + attachment.
 
