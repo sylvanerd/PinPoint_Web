@@ -20,7 +20,9 @@ The portal has three tabs in the left sidebar:
 
 2. **Customer Profiles** — Catalog of customers with search and a sticky list. Sylvan's full lifetime profile is wired up; other customers show a placeholder toast on click.
 
-3. **Product Insights** — Aggregated reactions for one product (Nobilia Senso) across the showroom: themes, sentiment, reaction stream.
+3. **Showroom Insights** — Aggregated reactions for one product (Nobilia Senso) across the showroom: themes, sentiment, reaction stream.
+
+4. **Consent Settings** (System) — Privacy consent form and registry table. Click **+ New consent form** for a walk-in customer, or select an existing row. Check consent, sign, and **Save consent**. Use **Delete consent** to remove a saved form or walk-in entry. Saved email flows into **Send recap** on the session summary.
 
 ## Design system
 

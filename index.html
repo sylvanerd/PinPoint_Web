@@ -2516,6 +2516,349 @@
   }
 
   /* ============================================================
+     CONSENT SETTINGS
+     Scoped to #view-consent
+     ============================================================ */
+  #view-consent .consent-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 38%) 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  #view-consent .consent-registry {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+  #view-consent .consent-registry-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #view-consent .consent-registry-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #view-consent .consent-registry-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+  }
+  #view-consent .consent-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  #view-consent .consent-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+  }
+  #view-consent .consent-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--outline-variant);
+    vertical-align: middle;
+  }
+  #view-consent .consent-table tbody tr {
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  #view-consent .consent-table tbody tr:nth-child(even) { background: var(--surface-container-low); }
+  #view-consent .consent-table tbody tr:hover { background: var(--surface-container); }
+  #view-consent .consent-table tbody tr.selected {
+    background: var(--primary-tint-soft);
+    box-shadow: inset 3px 0 0 var(--secondary);
+  }
+  #view-consent .consent-customer-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #view-consent .consent-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-full);
+    display: grid;
+    place-items: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--on-primary);
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+  #view-consent .consent-name {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  #view-consent .consent-chip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 4px 8px;
+    border-radius: var(--r-sm);
+    white-space: nowrap;
+  }
+  #view-consent .consent-chip.signed {
+    background: var(--secondary-tint-soft);
+    color: var(--secondary-strong);
+  }
+  #view-consent .consent-chip.unsigned {
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    border: 1px solid var(--outline-variant);
+  }
+  #view-consent .consent-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+  #view-consent .consent-form-card {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  #view-consent .consent-form-head {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+  }
+  #view-consent .consent-form-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  #view-consent .consent-form-sub {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    line-height: 1.45;
+  }
+  #view-consent .consent-form-body {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #view-consent .consent-section-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--on-surface);
+  }
+  #view-consent .consent-prose {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--on-surface-variant);
+  }
+  #view-consent .consent-prose ul {
+    margin: 8px 0 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #view-consent .consent-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    background: var(--surface-container-low);
+    cursor: pointer;
+    min-height: 48px;
+  }
+  #view-consent .consent-check-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--secondary);
+    cursor: pointer;
+  }
+  #view-consent .consent-check-label {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--on-surface);
+    cursor: pointer;
+  }
+  #view-consent .consent-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #view-consent .consent-field label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--on-surface-variant);
+  }
+  #view-consent .consent-input {
+    width: 100%;
+    padding: 12px 14px;
+    min-height: 48px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  #view-consent .consent-input:focus {
+    border-color: var(--secondary);
+    border-width: 2px;
+    padding: 11px 13px;
+  }
+  #view-consent .consent-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  #view-consent .consent-sig-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #view-consent .consent-sig-pad {
+    position: relative;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    background: var(--surface-container-lowest);
+    touch-action: none;
+    min-height: 140px;
+  }
+  #view-consent .consent-sig-canvas {
+    display: block;
+    width: 100%;
+    height: 140px;
+    cursor: crosshair;
+    border-radius: var(--r);
+    touch-action: none;
+  }
+  #view-consent .consent-sig-hint {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  #view-consent .consent-sig-hint.hidden { display: none; }
+  #view-consent .consent-sig-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  #view-consent .consent-saved-sig {
+    max-width: 200px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--r);
+    background: var(--surface-container-low);
+    padding: 8px;
+  }
+  #view-consent .consent-saved-sig img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  #view-consent .consent-saved-sig-label {
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    margin-top: 6px;
+    text-align: center;
+  }
+  #view-consent .consent-error {
+    font-size: 12px;
+    color: var(--error);
+    font-weight: 500;
+    display: none;
+  }
+  #view-consent .consent-error.visible { display: block; }
+  #view-consent .consent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--outline-variant);
+    align-items: center;
+  }
+  #view-consent .consent-actions-spacer { flex: 1; min-width: 8px; }
+  #view-consent .btn-danger {
+    color: var(--error);
+    border-color: var(--error);
+    background: var(--surface-container-lowest);
+  }
+  #view-consent .btn-danger:hover:not(:disabled) {
+    background: var(--error-tint);
+    border-color: var(--error);
+    color: var(--error);
+  }
+  #view-consent .btn-danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  #view-consent .consent-footer {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    line-height: 1.5;
+    padding-top: 4px;
+  }
+  #view-consent .consent-selected-banner {
+    font-size: 13px;
+    color: var(--secondary-strong);
+    font-weight: 600;
+    padding: 10px 14px;
+    background: var(--secondary-tint-soft);
+    border-radius: var(--r);
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 960px) {
+    #view-consent .consent-layout { grid-template-columns: 1fr; }
+    #view-consent .consent-registry { position: static; max-height: 420px; }
+    #view-consent .consent-fields-grid { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .sidebar, .toast, #view-consent .consent-registry, #view-consent .consent-actions, .page-header .page-meta { display: none !important; }
+    .app { display: block; }
+    .main { padding: 0; }
+    .view { display: none !important; }
+    #view-consent { display: block !important; }
+    #view-consent .consent-layout { display: block; }
+    #view-consent .consent-form-card { border: none; box-shadow: none; }
+  }
+
+  /* ============================================================
      PRODUCT INSIGHTS · Showroom Flow (spatial)
      All selectors scoped to #view-product so this panel stays
      self-contained and never leaks into the other views.
@@ -2851,12 +3194,12 @@
 
   <div class="nav-section-label">System</div>
 
-  <button class="nav-item">
+  <button class="nav-item" data-view="consent">
     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <polyline points="9 12 11 14 15 10"/>
     </svg>
-    <span>Settings</span>
+    <span>Consent Settings</span>
   </button>
 
   <div class="sidebar-footer">
@@ -3709,6 +4052,157 @@
 
 </section>
 
+<!-- ====================================================== -->
+<!-- VIEW 4: CONSENT SETTINGS                                -->
+<!-- ====================================================== -->
+<section class="view" id="view-consent">
+
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">System · privacy &amp; visit setup</div>
+      <h1 class="page-title">Consent Settings</h1>
+    </div>
+    <div class="page-meta" id="consentPageMeta">
+      <strong id="consentUnsignedCount">2 unsigned</strong><br>
+      <span id="consentSignedCount">3 on file</span>
+    </div>
+  </div>
+
+  <div class="consent-layout">
+
+    <aside class="consent-registry">
+      <div class="consent-registry-head">
+        <span class="consent-registry-title">Consent registry</span>
+        <div class="consent-registry-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="consentNewFormBtn">+ New consent form</button>
+          <span class="customer-list-count" id="consentRegistryCount">5 customers</span>
+        </div>
+      </div>
+      <table class="consent-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Signed</th>
+          </tr>
+        </thead>
+        <tbody id="consentTableBody"></tbody>
+      </table>
+    </aside>
+
+    <div class="consent-form-card" id="consentFormCard">
+      <div class="consent-form-head">
+        <div class="consent-form-title">Privacy &amp; Consent Notice</div>
+        <p class="consent-form-sub">Before the customer starts browsing with the smart glasses, walk through this notice together. It explains what PinPoint records, how it is used, and what choices they have.</p>
+      </div>
+
+      <div class="consent-form-body">
+        <div class="consent-selected-banner" id="consentSelectedBanner">Filling consent for: <span id="consentSelectedName">Sylvan Marchetti</span></div>
+
+        <div class="consent-prose">
+          <p>Before you start, please read this short notice. It explains what PinPoint records while you browse with the smart glasses, how that information is used, and what choices you have. It takes about a minute.</p>
+        </div>
+
+        <div>
+          <div class="consent-section-title">What we record</div>
+          <div class="consent-prose">
+            <ul>
+              <li>Voice notes you speak while browsing (e.g. "I love this handle style but the color is too cold"), automatically transcribed to text.</li>
+              <li>Photos of the products and reference images (e.g. a magazine page) you choose to capture or crop.</li>
+              <li>The location of each note relative to the product it was attached to, and the order in which you visited products.</li>
+              <li>An AI-generated summary of your preferences (style, colour, material, budget signals) built from the above.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="consent-section-title">How it's used</div>
+          <div class="consent-prose">
+            <ul>
+              <li>To help our sales team understand what you're interested in before they approach you, so the conversation starts from where you left off instead of from scratch.</li>
+              <li>To let a salesperson show you a recommended product, true to its real size, directly in your view.</li>
+              <li>In aggregate and de-identified form, to understand how customers move through and respond to the showroom.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="consent-section-title">Your choices</div>
+          <div class="consent-prose">
+            <ul>
+              <li>Participation is optional. If you'd rather browse without recording, tell any member of staff and the glasses will run in view-only mode — no voice, photo, or note capture.</li>
+              <li>You can review, edit, or delete your notes and profile at any time by asking a member of staff.</li>
+              <li>If you leave your email below, we'll send you a short recap of what you saved during this visit. Leaving it blank has no effect on your ability to use the glasses.</li>
+              <li>Your profile is kept so it can be recognised if you return, and is automatically deleted after 6 months of inactivity, or sooner on request.</li>
+              <li>We do not sell your data, and we do not use it for advertising outside this showroom.</li>
+            </ul>
+          </div>
+        </div>
+
+        <label class="consent-check-row" for="consentRecordingCheck">
+          <input type="checkbox" id="consentRecordingCheck" />
+          <span class="consent-check-label">I have read and understood this notice, and I consent to PinPoint recording my voice notes, photos, and browsing activity as described above.</span>
+        </label>
+        <div class="consent-error" id="consentRecordingError">Recording consent is required before saving.</div>
+
+        <label class="consent-check-row" for="consentRecapCheck">
+          <input type="checkbox" id="consentRecapCheck" />
+          <span class="consent-check-label">(Optional) Please email me a recap of my visit and my saved items at the address below.</span>
+        </label>
+
+        <div class="consent-fields-grid">
+          <div class="consent-field">
+            <label for="consentNameInput">Name (optional)</label>
+            <input type="text" class="consent-input" id="consentNameInput" placeholder="Customer name" autocomplete="name" />
+          </div>
+          <div class="consent-field">
+            <label for="consentEmailInput">Email (optional)</label>
+            <input type="email" class="consent-input" id="consentEmailInput" placeholder="name@example.com" autocomplete="email" />
+          </div>
+          <div class="consent-field">
+            <label for="consentDateInput">Date</label>
+            <input type="date" class="consent-input" id="consentDateInput" />
+          </div>
+          <div class="consent-field">
+            <label for="consentStaffInput">Staff member</label>
+            <input type="text" class="consent-input" id="consentStaffInput" value="Lena" autocomplete="name" />
+          </div>
+        </div>
+
+        <div class="consent-sig-wrap">
+          <label class="consent-section-title" for="consentSigCanvas">Customer signature</label>
+          <div id="consentSavedSigWrap" hidden>
+            <div class="consent-saved-sig">
+              <img id="consentSavedSigImg" alt="Saved signature" />
+              <div class="consent-saved-sig-label">Signature on file — draw below to replace</div>
+            </div>
+          </div>
+          <div class="consent-sig-pad">
+            <canvas class="consent-sig-canvas" id="consentSigCanvas" width="600" height="140"></canvas>
+            <div class="consent-sig-hint" id="consentSigHint">Sign here with finger or stylus</div>
+          </div>
+          <div class="consent-sig-actions">
+            <button type="button" class="btn btn-outline btn-sm" id="consentClearSigBtn">Clear signature</button>
+          </div>
+          <div class="consent-error" id="consentSigError">A customer signature is required before saving.</div>
+        </div>
+
+        <div class="consent-actions">
+          <button type="button" class="btn btn-primary" id="consentSaveBtn">Save consent</button>
+          <button type="button" class="btn btn-outline" id="consentClearFormBtn">Clear form</button>
+          <button type="button" class="btn btn-outline" id="consentPrintBtn">Print / Save PDF</button>
+          <span class="consent-actions-spacer"></span>
+          <button type="button" class="btn btn-outline btn-danger" id="consentDeleteBtn" disabled>Delete consent</button>
+        </div>
+
+        <p class="consent-footer">Questions about how your data is used? Ask any member of staff, or contact <a href="mailto:privacy@pinpoint.demo">privacy@pinpoint.demo</a>.</p>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
 </main>
 </div><!-- /app -->
 
@@ -3733,6 +4227,475 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+
+  // ============ CONSENT SETTINGS ============
+  (function initConsentSettings() {
+    const CONSENT_STORAGE_PREFIX = 'pinpoint_consent_';
+    const EXTRA_REGISTRY_KEY = 'pinpoint_consent_registry_extra';
+    const ACTIVE_CUSTOMER_ID = 'sylvan';
+    const SIG_HEIGHT = 140;
+
+    const SEED_REGISTRY = [
+      { id: 'sylvan', name: 'Sylvan Marchetti', initials: 'SM', signed: false, signedAt: null },
+      { id: 'jonas', name: 'Jonas Hartmann', initials: 'JH', signed: true, signedAt: '2026-04-22T11:04:00' },
+      { id: 'sofia', name: 'Sofia Kovač', initials: 'SK', signed: true, signedAt: '2026-04-21T15:32:00' },
+      { id: 'markus', name: 'Markus Richter', initials: 'MR', signed: true, signedAt: '2026-04-18T10:18:00' },
+      { id: 'anna', name: 'Anna Brandt', initials: 'AB', signed: false, signedAt: null }
+    ];
+
+    const tableBody = document.getElementById('consentTableBody');
+    const registryCountEl = document.getElementById('consentRegistryCount');
+    const selectedNameEl = document.getElementById('consentSelectedName');
+    const selectedBannerEl = document.getElementById('consentSelectedBanner');
+    const unsignedCountEl = document.getElementById('consentUnsignedCount');
+    const signedCountEl = document.getElementById('consentSignedCount');
+    const recordingCheck = document.getElementById('consentRecordingCheck');
+    const recapCheck = document.getElementById('consentRecapCheck');
+    const nameInput = document.getElementById('consentNameInput');
+    const emailInput = document.getElementById('consentEmailInput');
+    const dateInput = document.getElementById('consentDateInput');
+    const staffInput = document.getElementById('consentStaffInput');
+    const sigCanvas = document.getElementById('consentSigCanvas');
+    const sigHint = document.getElementById('consentSigHint');
+    const savedSigWrap = document.getElementById('consentSavedSigWrap');
+    const savedSigImg = document.getElementById('consentSavedSigImg');
+    const recordingError = document.getElementById('consentRecordingError');
+    const sigError = document.getElementById('consentSigError');
+
+    let selectedCustomerId = ACTIVE_CUSTOMER_ID;
+    let sigHasDrawn = false;
+    let sigCtx = null;
+    let sigEventsBound = false;
+    let registry = [];
+
+    function loadExtraRegistry() {
+      try {
+        const raw = localStorage.getItem(EXTRA_REGISTRY_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveExtraRegistry(extras) {
+      localStorage.setItem(EXTRA_REGISTRY_KEY, JSON.stringify(extras));
+    }
+
+    function rebuildRegistry() {
+      registry = SEED_REGISTRY.concat(loadExtraRegistry());
+    }
+
+    function getRegistryEntry(customerId) {
+      return registry.find(e => e.id === customerId) || null;
+    }
+
+    function initialsFromName(name) {
+      const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return 'NC';
+    }
+
+    function consentKey(customerId) {
+      return CONSENT_STORAGE_PREFIX + customerId;
+    }
+
+    function loadStoredRecord(customerId) {
+      try {
+        const raw = localStorage.getItem(consentKey(customerId));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function getRegistryState() {
+      return registry.map(entry => {
+        const stored = loadStoredRecord(entry.id);
+        if (stored && stored.consentGiven === false) {
+          return { ...entry, signed: false, signedAt: null };
+        }
+        if (stored && stored.consentGiven) {
+          return {
+            ...entry,
+            name: stored.customerName || entry.name,
+            initials: initialsFromName(stored.customerName || entry.name),
+            signed: true,
+            signedAt: stored.consentedAt || entry.signedAt
+          };
+        }
+        return { ...entry };
+      }).sort((a, b) => {
+        if (a.signed !== b.signed) return a.signed ? 1 : -1;
+        if (!a.signedAt) return -1;
+        if (!b.signedAt) return 1;
+        return new Date(b.signedAt) - new Date(a.signedAt);
+      });
+    }
+
+    function formatSignedTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function updatePageMeta() {
+      const rows = getRegistryState();
+      const unsigned = rows.filter(r => !r.signed).length;
+      const signed = rows.length - unsigned;
+      if (unsignedCountEl) unsignedCountEl.textContent = unsigned + (unsigned === 1 ? ' unsigned' : ' unsigned');
+      if (signedCountEl) signedCountEl.textContent = signed + ' on file';
+      if (registryCountEl) registryCountEl.textContent = rows.length + ' customers';
+    }
+
+    function updateSelectedBanner(entry, isNew) {
+      if (!selectedBannerEl) return;
+      if (isNew) {
+        selectedBannerEl.textContent = 'New walk-in · enter customer name below';
+      } else {
+        selectedBannerEl.innerHTML = 'Filling consent for: <span id="consentSelectedName">' + (entry ? entry.name : 'Customer') + '</span>';
+      }
+    }
+
+    function renderConsentTable() {
+      if (!tableBody) return;
+      const rows = getRegistryState();
+      tableBody.innerHTML = rows.map(row => `
+        <tr data-customer-id="${row.id}" class="${row.id === selectedCustomerId ? 'selected' : ''}">
+          <td>
+            <div class="consent-customer-cell">
+              <div class="consent-avatar">${row.initials}</div>
+              <span class="consent-name">${row.name}</span>
+            </div>
+          </td>
+          <td>
+            <span class="consent-chip ${row.signed ? 'signed' : 'unsigned'}">${row.signed ? 'Signed' : 'Not signed'}</span>
+          </td>
+          <td class="consent-time">${formatSignedTime(row.signedAt)}</td>
+        </tr>
+      `).join('');
+
+      tableBody.querySelectorAll('tr[data-customer-id]').forEach(tr => {
+        tr.addEventListener('click', () => selectCustomer(tr.dataset.customerId));
+      });
+      updatePageMeta();
+    }
+
+    function todayIsoDate() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function resizeSignaturePad() {
+      if (!sigCanvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const pad = sigCanvas.parentElement;
+      const cssW = pad ? pad.clientWidth : 400;
+      const cssH = SIG_HEIGHT;
+
+      sigCanvas.style.width = cssW + 'px';
+      sigCanvas.style.height = cssH + 'px';
+      sigCanvas.width = Math.max(1, Math.floor(cssW * dpr));
+      sigCanvas.height = Math.max(1, Math.floor(cssH * dpr));
+
+      sigCtx = sigCanvas.getContext('2d');
+      sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sigCtx.scale(dpr, dpr);
+      sigCtx.lineWidth = 2.5;
+      sigCtx.lineCap = 'round';
+      sigCtx.lineJoin = 'round';
+      sigCtx.strokeStyle = '#131b2e';
+    }
+
+    function bindSignaturePadEvents() {
+      if (!sigCanvas || sigEventsBound) return;
+      sigEventsBound = true;
+
+      let drawing = false;
+
+      function getPos(e) {
+        const r = sigCanvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      function startDraw(e) {
+        if (!sigCtx) return;
+        e.preventDefault();
+        drawing = true;
+        sigHasDrawn = true;
+        if (sigHint) sigHint.classList.add('hidden');
+        const p = getPos(e);
+        sigCtx.beginPath();
+        sigCtx.moveTo(p.x, p.y);
+        if (sigCanvas.setPointerCapture) sigCanvas.setPointerCapture(e.pointerId);
+      }
+
+      function moveDraw(e) {
+        if (!drawing || !sigCtx) return;
+        e.preventDefault();
+        const p = getPos(e);
+        sigCtx.lineTo(p.x, p.y);
+        sigCtx.stroke();
+      }
+
+      function endDraw(e) {
+        if (!drawing) return;
+        drawing = false;
+        try { sigCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+
+      sigCanvas.addEventListener('pointerdown', startDraw);
+      sigCanvas.addEventListener('pointermove', moveDraw);
+      sigCanvas.addEventListener('pointerup', endDraw);
+      sigCanvas.addEventListener('pointercancel', endDraw);
+    }
+
+    function clearSignatureCanvas() {
+      if (!sigCanvas || !sigCtx) resizeSignaturePad();
+      if (!sigCtx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = sigCanvas.width / dpr;
+      const h = sigCanvas.height / dpr;
+      sigCtx.clearRect(0, 0, w, h);
+      sigHasDrawn = false;
+      if (sigHint) sigHint.classList.remove('hidden');
+    }
+
+    function restoreSignatureImage(dataUrl) {
+      if (!dataUrl) return;
+      resizeSignaturePad();
+      if (!sigCtx) return;
+      const img = new Image();
+      img.onload = () => {
+        const dpr = window.devicePixelRatio || 1;
+        const w = sigCanvas.width / dpr;
+        const h = sigCanvas.height / dpr;
+        sigCtx.clearRect(0, 0, w, h);
+        sigCtx.drawImage(img, 0, 0, w, h);
+        sigHasDrawn = true;
+        if (sigHint) sigHint.classList.add('hidden');
+      };
+      img.src = dataUrl;
+    }
+
+    function fillFormFromRecord(record, customerName, isNew) {
+      if (recordingCheck) recordingCheck.checked = !!(record && record.consentGiven);
+      if (recapCheck) recapCheck.checked = !!(record && record.recapOptIn);
+      if (nameInput) nameInput.value = (record && record.customerName) || customerName || '';
+      if (emailInput) emailInput.value = (record && record.email) || '';
+      if (dateInput) dateInput.value = (record && record.date) || todayIsoDate();
+      if (staffInput) staffInput.value = (record && record.staffMember) || 'Lena';
+
+      resizeSignaturePad();
+      clearSignatureCanvas();
+      if (record && record.signatureDataUrl) {
+        if (savedSigWrap) savedSigWrap.hidden = false;
+        if (savedSigImg) savedSigImg.src = record.signatureDataUrl;
+        restoreSignatureImage(record.signatureDataUrl);
+      } else {
+        if (savedSigWrap) savedSigWrap.hidden = true;
+        if (savedSigImg) savedSigImg.removeAttribute('src');
+      }
+      hideErrors();
+      const entry = getRegistryEntry(selectedCustomerId);
+      updateSelectedBanner(entry, isNew);
+      updateDeleteButton();
+    }
+
+    function updateDeleteButton() {
+      const btn = document.getElementById('consentDeleteBtn');
+      if (!btn) return;
+      const isWalkin = String(selectedCustomerId).startsWith('walkin-');
+      const row = getRegistryState().find(r => r.id === selectedCustomerId);
+      const stored = loadStoredRecord(selectedCustomerId);
+      const canDelete = isWalkin || !!(row && row.signed) || !!(stored && stored.consentGiven);
+      btn.disabled = !canDelete;
+    }
+
+    function hideErrors() {
+      if (recordingError) recordingError.classList.remove('visible');
+      if (sigError) sigError.classList.remove('visible');
+    }
+
+    function selectCustomer(customerId) {
+      selectedCustomerId = customerId;
+      const entry = getRegistryEntry(customerId);
+      const record = loadStoredRecord(customerId);
+      const isNew = !!(entry && entry.isNew && !record);
+      fillFormFromRecord(record, entry ? entry.name : '', isNew);
+      renderConsentTable();
+      requestAnimationFrame(resizeSignaturePad);
+    }
+
+    function newConsentForm() {
+      const id = 'walkin-' + Date.now();
+      const entry = {
+        id,
+        name: 'New customer',
+        initials: 'NC',
+        signed: false,
+        signedAt: null,
+        isNew: true
+      };
+      const extras = loadExtraRegistry();
+      extras.unshift(entry);
+      saveExtraRegistry(extras);
+      rebuildRegistry();
+      selectedCustomerId = id;
+      fillFormFromRecord(null, '', true);
+      if (nameInput) {
+        nameInput.value = '';
+        nameInput.focus();
+      }
+      renderConsentTable();
+      requestAnimationFrame(resizeSignaturePad);
+      showToast('Blank consent form ready — enter customer details');
+    }
+
+    function validateForm() {
+      hideErrors();
+      let ok = true;
+      if (!recordingCheck || !recordingCheck.checked) {
+        if (recordingError) recordingError.classList.add('visible');
+        ok = false;
+      }
+      if (!sigHasDrawn) {
+        if (sigError) sigError.classList.add('visible');
+        ok = false;
+      }
+      return ok;
+    }
+
+    function saveConsent() {
+      if (!validateForm()) {
+        showToast('Complete required fields before saving consent.');
+        return;
+      }
+      const now = new Date().toISOString();
+      const customerName = nameInput ? nameInput.value.trim() : '';
+      const record = {
+        customerId: selectedCustomerId,
+        consentedAt: now,
+        consentGiven: true,
+        recapOptIn: !!(recapCheck && recapCheck.checked),
+        customerName: customerName || 'New customer',
+        email: emailInput ? emailInput.value.trim() : '',
+        date: dateInput ? dateInput.value : todayIsoDate(),
+        signatureDataUrl: sigCanvas.toDataURL('image/png'),
+        staffMember: staffInput ? staffInput.value.trim() : 'Lena'
+      };
+      localStorage.setItem(consentKey(selectedCustomerId), JSON.stringify(record));
+
+      const entry = getRegistryEntry(selectedCustomerId);
+      if (entry) {
+        entry.name = record.customerName;
+        entry.initials = initialsFromName(record.customerName);
+        entry.signed = true;
+        entry.signedAt = now;
+        entry.isNew = false;
+        if (String(selectedCustomerId).startsWith('walkin-')) {
+          const extras = loadExtraRegistry().map(e =>
+            e.id === selectedCustomerId
+              ? { ...e, name: entry.name, initials: entry.initials, isNew: false }
+              : e
+          );
+          saveExtraRegistry(extras);
+          rebuildRegistry();
+        }
+      }
+
+      if (savedSigWrap) savedSigWrap.hidden = false;
+      if (savedSigImg) savedSigImg.src = record.signatureDataUrl;
+      updateSelectedBanner(entry, false);
+      renderConsentTable();
+      updateDeleteButton();
+      showToast('Consent saved for ' + record.customerName);
+    }
+
+    function clearForm() {
+      const entry = getRegistryEntry(selectedCustomerId);
+      const isNew = !!(entry && entry.isNew);
+      fillFormFromRecord(null, isNew ? '' : (entry ? entry.name : ''), isNew);
+    }
+
+    function deleteConsent() {
+      const entry = getRegistryEntry(selectedCustomerId);
+      if (!entry) return;
+      const isWalkin = String(selectedCustomerId).startsWith('walkin-');
+      const row = getRegistryState().find(r => r.id === selectedCustomerId);
+      const stored = loadStoredRecord(selectedCustomerId);
+      const name = (stored && stored.customerName) || entry.name || 'this customer';
+
+      if (!isWalkin && !(row && row.signed) && !(stored && stored.consentGiven)) {
+        showToast('No consent on file to delete.');
+        return;
+      }
+
+      if (!window.confirm('Delete consent for ' + name + '? This cannot be undone.')) return;
+
+      if (isWalkin) {
+        const extras = loadExtraRegistry().filter(e => e.id !== selectedCustomerId);
+        saveExtraRegistry(extras);
+        localStorage.removeItem(consentKey(selectedCustomerId));
+        rebuildRegistry();
+        selectCustomer(ACTIVE_CUSTOMER_ID);
+        showToast('Walk-in consent form removed.');
+        return;
+      }
+
+      localStorage.setItem(consentKey(selectedCustomerId), JSON.stringify({
+        customerId: selectedCustomerId,
+        consentGiven: false,
+        deletedAt: new Date().toISOString()
+      }));
+      fillFormFromRecord(null, entry.name, false);
+      renderConsentTable();
+      showToast('Consent deleted for ' + name);
+    }
+
+    window.pinpointGetConsentForCustomer = function(customerId) {
+      return loadStoredRecord(customerId);
+    };
+
+    document.getElementById('consentSaveBtn')?.addEventListener('click', saveConsent);
+    document.getElementById('consentClearFormBtn')?.addEventListener('click', clearForm);
+    document.getElementById('consentClearSigBtn')?.addEventListener('click', clearSignatureCanvas);
+    document.getElementById('consentPrintBtn')?.addEventListener('click', () => window.print());
+    document.getElementById('consentDeleteBtn')?.addEventListener('click', deleteConsent);
+    document.getElementById('consentNewFormBtn')?.addEventListener('click', newConsentForm);
+
+    document.querySelector('.nav-item[data-view="consent"]')?.addEventListener('click', () => {
+      setTimeout(() => {
+        resizeSignaturePad();
+        if (loadStoredRecord(selectedCustomerId)?.signatureDataUrl) {
+          restoreSignatureImage(loadStoredRecord(selectedCustomerId).signatureDataUrl);
+        }
+      }, 80);
+    });
+
+    window.addEventListener('resize', () => {
+      if (document.getElementById('view-consent')?.classList.contains('active')) {
+        const saved = loadStoredRecord(selectedCustomerId);
+        resizeSignaturePad();
+        if (saved?.signatureDataUrl) restoreSignatureImage(saved.signatureDataUrl);
+      }
+    });
+
+    rebuildRegistry();
+    bindSignaturePadEvents();
+    if (dateInput && !dateInput.value) dateInput.value = todayIsoDate();
+    selectCustomer(ACTIVE_CUSTOMER_ID);
+  })();
 
   // ============ SESSION-MODE TOGGLE ============
   const segs = document.querySelectorAll('.seg');
@@ -5726,7 +6689,16 @@
   const sendRecapBtn = document.getElementById('sendRecapBtn');
   if (sendRecapBtn) {
     sendRecapBtn.addEventListener('click', () => {
-      showToast('Recap sent to sylvan.m@example.com');
+      const consent = window.pinpointGetConsentForCustomer
+        ? window.pinpointGetConsentForCustomer('sylvan')
+        : null;
+      if (consent && consent.recapOptIn && consent.email) {
+        showToast('Recap sent to ' + consent.email);
+      } else if (consent && consent.email) {
+        showToast('Recap sent to ' + consent.email);
+      } else {
+        showToast('Add customer email in Consent Settings to send a recap');
+      }
     });
   }
   const exportPdfBtn = document.getElementById('exportPdfBtn');
