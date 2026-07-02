@@ -5716,7 +5716,6 @@
     noteFeed.innerHTML = briefs.map(renderBriefCard).join('');
     updateLiveHeader();
     renderRouteMap();
-    checkExistingStaffCall().catch(e => console.warn('staff call check', e));
   }
 
   function updateLiveHeader() {
@@ -5957,7 +5956,19 @@
       });
   }
 
-  let staffCallPollSessionId = null;
+  let staffCallState = { activeSessionId: null };
+
+  function isDemoSessionId(id) {
+    if (id == null || id === '') return true;
+    const s = String(id);
+    return s === 'demo-session' || s.startsWith('demo-');
+  }
+
+  function sessionRowIsLive(row) {
+    if (!row) return false;
+    const status = String(row.status || 'active').toLowerCase();
+    return status !== 'ended' && status !== 'abandon';
+  }
 
   function formatStaffCallTime(iso) {
     if (!iso) return '';
@@ -5985,11 +5996,20 @@
     }
   }
 
-  function handleStaffCallSessionRow(row) {
+  function handleStaffCallSessionRow(row, notify) {
     if (!row || !row.staff_call_requested_at) return;
-    const tracked = getTrackedSessionId();
-    if (tracked && String(row.id) !== String(tracked)) return;
-    showStaffCallCue(row.staff_call_requested_at);
+    if (!sessionRowIsLive(row)) return;
+    staffCallState.activeSessionId = row.id;
+    showStaffCallCue(row.staff_call_requested_at, notify);
+  }
+
+  function trackActiveSessionRow(row) {
+    if (!row || !row.id) return;
+    if (sessionRowIsLive(row)) {
+      staffCallState.activeSessionId = row.id;
+    } else if (String(staffCallState.activeSessionId) === String(row.id)) {
+      staffCallState.activeSessionId = null;
+    }
   }
 
   function subscribeToStaffCalls() {
@@ -5997,11 +6017,23 @@
     supabaseClient
       .channel('sessions-staff-call')
       .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'sessions'
+      }, payload => {
+        trackActiveSessionRow(payload.new);
+      })
+      .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'sessions'
       }, payload => {
-        handleStaffCallSessionRow(payload.new);
+        trackActiveSessionRow(payload.new);
+        if (!payload.new?.staff_call_requested_at) return;
+        const prev = payload.old?.staff_call_requested_at;
+        const next = payload.new.staff_call_requested_at;
+        const isFresh = !prev || String(prev) !== String(next);
+        handleStaffCallSessionRow(payload.new, isFresh);
       })
       .subscribe(status => {
         if (status === 'SUBSCRIBED') {
@@ -6010,18 +6042,39 @@
       });
   }
 
-  async function checkExistingStaffCall() {
-    const sessionId = getTrackedSessionId();
-    if (!supabaseClient || !sessionId) return;
-    if (staffCallPollSessionId === sessionId) return;
-    staffCallPollSessionId = sessionId;
+  async function syncActiveSessionFromDb() {
+    if (!supabaseClient) return;
     const { data, error } = await supabaseClient
       .from('sessions')
-      .select('id,staff_call_requested_at')
-      .eq('id', sessionId)
+      .select('id,status,started_at')
+      .eq('status', 'active')
+      .order('started_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (!error && data && data.staff_call_requested_at) {
-      showStaffCallCue(data.staff_call_requested_at, false);
+    if (error) {
+      console.warn('active session sync', error);
+      return;
+    }
+    if (data?.id) staffCallState.activeSessionId = data.id;
+  }
+
+  async function checkExistingStaffCall() {
+    if (!supabaseClient) return;
+    await syncActiveSessionFromDb();
+    const { data, error } = await supabaseClient
+      .from('sessions')
+      .select('id,staff_call_requested_at,status')
+      .not('staff_call_requested_at', 'is', null)
+      .order('staff_call_requested_at', { ascending: false })
+      .limit(8);
+    if (error) {
+      console.warn('staff call check', error);
+      return;
+    }
+    const row = (data || []).find(sessionRowIsLive);
+    if (row) {
+      staffCallState.activeSessionId = row.id;
+      showStaffCallCue(row.staff_call_requested_at, false);
     }
   }
 
@@ -6079,8 +6132,9 @@
   }
 
   function getTrackedSessionId() {
-    const first = showroomState.briefs[0];
-    return first && first.sessionId ? first.sessionId : null;
+    const fromPin = showroomState.briefs.find(b => b.sessionId && !isDemoSessionId(b.sessionId));
+    if (fromPin) return fromPin.sessionId;
+    return staffCallState.activeSessionId || null;
   }
 
   function formatDurationMs(ms) {
@@ -8521,9 +8575,13 @@
     }
   })();
 
-  loadInitialPins()
-    .then(() => checkExistingStaffCall())
-    .catch(error => {
+  subscribeToPins();
+  subscribeToStaffCalls();
+  subscribeToVisitSummaries();
+  initReferenceImageNotesUI();
+  checkExistingStaffCall().catch(e => console.warn('staff call check', e));
+
+  loadInitialPins().catch(error => {
       console.error(error);
       if (noteFeed) {
         noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud data. Check table permissions and reload.</div>';
