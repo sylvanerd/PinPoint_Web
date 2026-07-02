@@ -6006,6 +6006,7 @@
     dismissedKey: null,
     suppressBanner: false
   };
+  let staffCallChannel = null;
 
   function staffCallDismissStorage() {
     try {
@@ -6042,12 +6043,40 @@
   }
 
   async function clearStaffCallInDb(sessionId) {
-    if (!supabaseClient || !sessionId || isDemoSessionId(sessionId)) return;
+    if (!supabaseClient || !sessionId || isDemoSessionId(sessionId)) return true;
     const { error } = await supabaseClient
       .from('sessions')
       .update({ staff_call_requested_at: null, staff_call_spatial_position: null })
       .eq('id', sessionId);
-    if (error) console.warn('staff call clear', error);
+    if (error) {
+      console.warn('staff call clear', error);
+      return false;
+    }
+    return true;
+  }
+
+  async function endTrackedSessionOnPortal() {
+    const sid = getTrackedSessionId() || staffCallState.activeSessionId;
+    staffCallState.suppressBanner = true;
+    hideStaffCallCue();
+    if (!supabaseClient || !sid || isDemoSessionId(sid)) return true;
+    const endedAt = new Date().toISOString();
+    const { error } = await supabaseClient
+      .from('sessions')
+      .update({
+        status: 'ended',
+        ended_at: endedAt,
+        staff_call_requested_at: null,
+        staff_call_spatial_position: null
+      })
+      .eq('id', sid);
+    if (error) {
+      console.warn('portal end session', error);
+      return false;
+    }
+    staffCallState.activeSessionId = null;
+    staffCallState.lastRequestedAt = null;
+    return true;
   }
 
   function isStaffCallDismissed(sessionId, requestedAt) {
@@ -6247,11 +6276,12 @@
     if (locEl) locEl.textContent = '';
   }
 
-  function dismissStaffCallCue() {
+  async function dismissStaffCallCue() {
     const banner = document.getElementById('staffCallBanner');
     const sid =
       staffCallState.activeSessionId ||
       (banner && banner.getAttribute('data-session-id')) ||
+      getTrackedSessionId() ||
       '';
     const at =
       staffCallState.lastRequestedAt ||
@@ -6264,12 +6294,17 @@
       saveStaffCallDismissedKey(key);
     }
     hideStaffCallCue();
-    clearStaffCallInDb(sid).catch(e => console.warn('staff call dismiss', e));
+    if (!sid) return true;
+    return clearStaffCallInDb(sid);
   }
 
   function handleStaffCallSessionRow(row, notify) {
     if (!row || !row.staff_call_requested_at) return;
     if (!sessionRowIsLive(row)) {
+      hideStaffCallCue();
+      return;
+    }
+    if (isStaffCallDismissed(row.id, row.staff_call_requested_at)) {
       hideStaffCallCue();
       return;
     }
@@ -6285,14 +6320,17 @@
     if (String(staffCallState.activeSessionId) === String(row.id)) {
       staffCallState.activeSessionId = null;
       staffCallState.lastRequestedAt = null;
-      staffCallState.suppressBanner = false;
     }
     hideStaffCallCue();
   }
 
   function subscribeToStaffCalls() {
     if (!supabaseClient) return;
-    supabaseClient
+    if (staffCallChannel) {
+      supabaseClient.removeChannel(staffCallChannel);
+      staffCallChannel = null;
+    }
+    staffCallChannel = supabaseClient
       .channel('sessions-staff-call')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -6316,6 +6354,10 @@
         if (!nextCall) return;
         const isFresh = !prevCall || String(prevCall) !== String(nextCall);
         if (!isFresh) return;
+        if (isStaffCallDismissed(payload.new.id, nextCall)) {
+          hideStaffCallCue();
+          return;
+        }
         staffCallState.suppressBanner = false;
         handleStaffCallSessionRow(payload.new, true);
       })
@@ -7738,12 +7780,17 @@
       updateSummaryTabAvailability();
     } else {
       sessionEnded = true;
-      hideStaffCallCue();
       updateSummaryTabAvailability();
       liveSeg.classList.remove('live-mode');
       statusMeta.textContent = 'Ended 15:08 · 46m';
       endBtn.innerHTML = '↺ Reset demo';
-      showToast('Session ended. Summary ready to review.');
+      endTrackedSessionOnPortal().then(ok => {
+        if (ok) {
+          showToast('Session ended. Summary ready to review.');
+        } else {
+          showToast('Session ended in portal; cloud sync failed — banner may return on refresh.');
+        }
+      });
     }
   });
 
@@ -8875,16 +8922,17 @@
         noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud data. Check table permissions and reload.</div>';
       }
     });
-  subscribeToPins();
-  subscribeToStaffCalls();
-  subscribeToVisitSummaries();
-  initReferenceImageNotesUI();
 
   document.getElementById('ackStaffCallBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    dismissStaffCallCue();
-    showToast('Marked as on the way');
+    dismissStaffCallCue().then(ok => {
+      showToast(
+        ok
+          ? 'Marked as on the way'
+          : 'Banner hidden; could not clear call in cloud — check sessions UPDATE permission.'
+      );
+    });
   });
 </script>
 
