@@ -360,29 +360,51 @@
     flex-wrap: wrap;
     padding: 14px 20px;
     margin-bottom: 16px;
-    background: var(--secondary-tint-soft);
-    border: 1px solid var(--secondary);
+    background: var(--error-tint);
+    border: 1px solid var(--error);
     border-radius: var(--r-lg);
     font-size: 14px;
     animation: staffCallIn 0.45s ease both;
   }
   .staff-call-banner[hidden] { display: none !important; }
-  .staff-call-banner strong { color: var(--secondary-strong); }
+  .staff-call-banner strong { color: var(--error); }
+  .staff-call-banner .staff-call-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--r-full);
+    background: var(--error);
+    flex-shrink: 0;
+    animation: staffCallDotPulse 2s ease-in-out infinite;
+  }
   .staff-call-banner .staff-call-time {
     font-size: 12px;
     color: var(--on-surface-variant);
     margin-right: auto;
   }
   .staff-call-banner.pulse {
-    animation: staffCallPulse 1.4s ease-in-out infinite;
+    animation: staffCallIn 0.45s ease both, staffCallPulse 1.4s ease-in-out infinite;
+  }
+  .staff-call-banner .staff-call-ack {
+    border-color: var(--error);
+    color: var(--error);
+    background: var(--surface-container-lowest);
+  }
+  .staff-call-banner .staff-call-ack:hover {
+    background: var(--error);
+    color: var(--on-primary);
+    border-color: var(--error);
   }
   @keyframes staffCallIn {
     from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   @keyframes staffCallPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 106, 97, 0.35); }
-    50% { box-shadow: 0 0 0 8px rgba(0, 106, 97, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(186, 26, 26, 0); }
+  }
+  @keyframes staffCallDotPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.55); }
+    50% { box-shadow: 0 0 0 6px rgba(186, 26, 26, 0); }
   }
 
   /* ============================================================ */
@@ -3780,10 +3802,10 @@
   </div>
 
   <div class="staff-call-banner" id="staffCallBanner" hidden>
-    <span class="eyebrow-dot"></span>
+    <span class="staff-call-dot"></span>
     <strong>Customer is calling for help</strong>
     <span class="staff-call-time" id="staffCallTime"></span>
-    <button type="button" class="btn btn-secondary btn-sm" id="ackStaffCallBtn">I'm on my way</button>
+    <button type="button" class="btn btn-outline btn-sm staff-call-ack" id="ackStaffCallBtn">I'm on my way</button>
   </div>
 
   <!-- Toggle bar -->
@@ -5956,7 +5978,33 @@
       });
   }
 
-  let staffCallState = { activeSessionId: null };
+  const STAFF_CALL_DISMISS_STORAGE_KEY = 'pinpoint_staff_call_dismissed_v1';
+  let staffCallState = { activeSessionId: null, lastRequestedAt: null };
+
+  function staffCallEventKey(sessionId, requestedAt) {
+    return String(sessionId || '') + '|' + String(requestedAt || '');
+  }
+
+  function loadStaffCallDismissedKey() {
+    try {
+      return sessionStorage.getItem(STAFF_CALL_DISMISS_STORAGE_KEY) || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function saveStaffCallDismissedKey(key) {
+    try {
+      if (key) sessionStorage.setItem(STAFF_CALL_DISMISS_STORAGE_KEY, key);
+      else sessionStorage.removeItem(STAFF_CALL_DISMISS_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function isStaffCallDismissed(sessionId, requestedAt) {
+    const key = staffCallEventKey(sessionId, requestedAt);
+    if (!sessionId || !requestedAt) return false;
+    return loadStaffCallDismissedKey() === key;
+  }
 
   function isDemoSessionId(id) {
     if (id == null || id === '') return true;
@@ -5977,7 +6025,11 @@
     return 'Requested at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function showStaffCallCue(requestedAt, notify) {
+  function showStaffCallCue(requestedAt, notify, sessionId) {
+    const sid = sessionId || staffCallState.activeSessionId;
+    if (!requestedAt || isStaffCallDismissed(sid, requestedAt)) return;
+    staffCallState.lastRequestedAt = requestedAt;
+    if (sid) staffCallState.activeSessionId = sid;
     const banner = document.getElementById('staffCallBanner');
     const timeEl = document.getElementById('staffCallTime');
     if (banner) {
@@ -5996,20 +6048,35 @@
     }
   }
 
+  function dismissStaffCallCue() {
+    const sid = staffCallState.activeSessionId;
+    const at = staffCallState.lastRequestedAt;
+    if (sid && at) {
+      saveStaffCallDismissedKey(staffCallEventKey(sid, at));
+    }
+    hideStaffCallCue();
+  }
+
   function handleStaffCallSessionRow(row, notify) {
     if (!row || !row.staff_call_requested_at) return;
-    if (!sessionRowIsLive(row)) return;
-    staffCallState.activeSessionId = row.id;
-    showStaffCallCue(row.staff_call_requested_at, notify);
+    if (!sessionRowIsLive(row)) {
+      hideStaffCallCue();
+      return;
+    }
+    showStaffCallCue(row.staff_call_requested_at, notify, row.id);
   }
 
   function trackActiveSessionRow(row) {
     if (!row || !row.id) return;
     if (sessionRowIsLive(row)) {
       staffCallState.activeSessionId = row.id;
-    } else if (String(staffCallState.activeSessionId) === String(row.id)) {
-      staffCallState.activeSessionId = null;
+      return;
     }
+    if (String(staffCallState.activeSessionId) === String(row.id)) {
+      staffCallState.activeSessionId = null;
+      staffCallState.lastRequestedAt = null;
+    }
+    hideStaffCallCue();
   }
 
   function subscribeToStaffCalls() {
@@ -6073,8 +6140,7 @@
     }
     const row = (data || []).find(sessionRowIsLive);
     if (row) {
-      staffCallState.activeSessionId = row.id;
-      showStaffCallCue(row.staff_call_requested_at, false);
+      showStaffCallCue(row.staff_call_requested_at, false, row.id);
     }
   }
 
@@ -7451,6 +7517,7 @@
       updateSummaryTabAvailability();
     } else {
       sessionEnded = true;
+      hideStaffCallCue();
       updateSummaryTabAvailability();
       liveSeg.classList.remove('live-mode');
       statusMeta.textContent = 'Ended 15:08 · 46m';
@@ -8593,7 +8660,7 @@
   initReferenceImageNotesUI();
 
   document.getElementById('ackStaffCallBtn')?.addEventListener('click', () => {
-    hideStaffCallCue();
+    dismissStaffCallCue();
     showToast('Marked as on the way');
   });
 </script>
