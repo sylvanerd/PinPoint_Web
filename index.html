@@ -1116,35 +1116,10 @@
   }
   .readiness-bar-fill {
     height: 100%;
-    width: 78%;
+    width: 0%;
     background: var(--secondary);
     border-radius: var(--r-full);
-  }
-  .approach-btn {
-    width: 100%;
-    padding: 14px;
-    min-height: 48px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    background: var(--secondary);
-    color: var(--on-secondary);
-    border: none;
-    border-radius: var(--r);
-    cursor: pointer;
-    transition: background 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    position: relative;
-    z-index: 2;
-  }
-  .approach-btn:hover { background: var(--secondary-tint); color: var(--secondary-strong); }
-  .approach-btn::after {
-    content: "→";
-    font-size: 18px;
+    transition: width 0.4s ease;
   }
 
   .signal-card {
@@ -4126,15 +4101,14 @@
 
         <section class="readiness">
           <div class="readiness-eyebrow">Approach signal</div>
-          <div class="readiness-score">78<sup>%</sup></div>
-          <div class="readiness-label">Sylvan is showing strong engagement. Optimal window to approach opens in ~2 min.</div>
-          <div class="readiness-bar"><div class="readiness-bar-fill"></div></div>
-          <button class="approach-btn">I'm approaching now</button>
+          <div class="readiness-score" id="readinessScore">--<sup>%</sup></div>
+          <div class="readiness-label" id="readinessLabel">Waiting for the first pin of this session.</div>
+          <div class="readiness-bar"><div class="readiness-bar-fill" id="readinessBarFill" style="width:0%"></div></div>
         </section>
 
         <section class="opener-card">
           <div class="opener-label">AI-drafted opener</div>
-          <div class="opener-text">"Hi Sylvan, I noticed you were drawn to <strong>the Nobilia Senso line</strong> and had some questions about <strong>how it holds up day-to-day</strong>. Let me show you two alternatives that address that."</div>
+          <div class="opener-text" id="openerText">Waiting for the first pin to draft an opener.</div>
         </section>
       </div>
 
@@ -5761,9 +5735,113 @@
       }));
   };
 
+  // ===== Approach signal + AI-drafted opener (computed from live pins) =====
+  const APPROACH_NAME = 'Demo Customer';
+
+  function approachStats() {
+    const pins = window.pinpointGetLiveRoute();
+    if (!pins.length) return null;
+    const pos = pins.filter(p => p.sentiment === 'pos').length;
+    const neg = pins.filter(p => p.sentiment === 'neg').length;
+
+    const counts = {};
+    pins.forEach(p => {
+      if (p.name && p.name !== 'Detected product') counts[p.name] = (counts[p.name] || 0) + 1;
+    });
+    const repeatName = (Object.entries(counts).find(([, c]) => c > 1) || [null])[0];
+
+    const lastTs = new Date(pins[pins.length - 1].createdAt || 0).getTime();
+    const idleMin = Number.isFinite(lastTs) && lastTs > 0 ? (Date.now() - lastTs) / 60000 : null;
+
+    const latestOfSentiment = s => {
+      for (let i = pins.length - 1; i >= 0; i--) {
+        const p = pins[i];
+        if (p.sentiment === s && p.name && p.name !== 'Detected product') return p.name;
+      }
+      return null;
+    };
+
+    return {
+      n: pins.length, pos, neg, repeatName, idleMin,
+      likedName: repeatName || latestOfSentiment('pos'),
+      concernName: latestOfSentiment('neg')
+    };
+  }
+
+  // Transparent heuristic, clamped to 5-98 so it never reads as a fake 100%.
+  function approachScore(st) {
+    let score = 25 + Math.min(st.n * 8, 40);
+    if (st.n) score += Math.round((st.pos / st.n) * 15);
+    if (st.repeatName) score += 10;
+    score += Math.min(st.neg * 8, 16);
+    if (st.idleMin != null) {
+      if (st.idleMin < 2) score += 10;
+      else if (st.idleMin > 12) score -= 35;
+      else if (st.idleMin > 6) score -= 20;
+    }
+    return Math.max(5, Math.min(98, score));
+  }
+
+  function approachLabel(st, score) {
+    const mix = `${st.pos} liked · ${st.neg} concern${st.neg === 1 ? '' : 's'}`;
+    if (st.idleMin != null && st.idleMin > 12) {
+      return `${APPROACH_NAME} has gone quiet — no pins in ${Math.round(st.idleMin)} min. Wait for the next signal.`;
+    }
+    if (score >= 70) {
+      const hook = st.concernName
+        ? ` The concern on ${st.concernName} is a natural opening.`
+        : ' Optimal window to approach is open.';
+      return `${APPROACH_NAME} is showing strong engagement — ${mix}.` + hook;
+    }
+    if (score >= 40) {
+      return `${APPROACH_NAME} is warming up — ${mix}. A pin or two more and it is worth stepping in.`;
+    }
+    return `${APPROACH_NAME} is browsing quietly — ${mix}. Give them space for now.`;
+  }
+
+  function openerText(st) {
+    const liked = st.likedName ? escapeHtml(st.likedName) : null;
+    const concern = st.concernName ? escapeHtml(st.concernName) : null;
+    if (liked && concern && liked !== concern) {
+      return `"Hi ${APPROACH_NAME}, I noticed you were drawn to <strong>${liked}</strong> and had some questions about <strong>${concern}</strong>. Let me show you two alternatives that address that."`;
+    }
+    if (concern) {
+      return `"Hi ${APPROACH_NAME}, I saw you had some questions about <strong>${concern}</strong>. Let me show you a couple of alternatives that might fit better."`;
+    }
+    if (liked) {
+      return `"Hi ${APPROACH_NAME}, I noticed you were drawn to <strong>${liked}</strong> — happy to walk you through the finishes and options."`;
+    }
+    return `"Hi ${APPROACH_NAME}, I saw you pinned a few pieces — happy to walk you through any of them."`;
+  }
+
+  function renderApproachPanel() {
+    const scoreEl = document.getElementById('readinessScore');
+    const labelEl = document.getElementById('readinessLabel');
+    const barEl = document.getElementById('readinessBarFill');
+    const openerEl = document.getElementById('openerText');
+    if (!scoreEl || !labelEl || !barEl || !openerEl) return;
+
+    const st = approachStats();
+    if (!st) {
+      scoreEl.innerHTML = '--<sup>%</sup>';
+      labelEl.textContent = 'Waiting for the first pin of this session.';
+      barEl.style.width = '0%';
+      openerEl.textContent = 'Waiting for the first pin to draft an opener.';
+      return;
+    }
+    const score = approachScore(st);
+    scoreEl.innerHTML = score + '<sup>%</sup>';
+    labelEl.textContent = approachLabel(st, score);
+    barEl.style.width = score + '%';
+    openerEl.innerHTML = openerText(st);
+  }
+
   function notifyRouteUpdated() {
+    renderApproachPanel();
     document.dispatchEvent(new CustomEvent('pinpoint:route-updated'));
   }
+  // Keep the idle-time decay honest between pin events.
+  setInterval(renderApproachPanel, 60000);
 
   function renderShowroomBriefs() {
     if (!noteFeed) return;
