@@ -351,6 +351,41 @@
   }
 
   /* ============================================================ */
+  /* STAFF CALL CUE                                                */
+  /* ============================================================ */
+  .staff-call-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    background: var(--secondary-tint-soft);
+    border: 1px solid var(--secondary);
+    border-radius: var(--r-lg);
+    font-size: 14px;
+    animation: staffCallIn 0.45s ease both;
+  }
+  .staff-call-banner[hidden] { display: none !important; }
+  .staff-call-banner strong { color: var(--secondary-strong); }
+  .staff-call-banner .staff-call-time {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    margin-right: auto;
+  }
+  .staff-call-banner.pulse {
+    animation: staffCallPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes staffCallIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes staffCallPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 106, 97, 0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(0, 106, 97, 0); }
+  }
+
+  /* ============================================================ */
   /* SESSION-MODE TOGGLE                                           */
   /* ============================================================ */
   .session-toggle-bar {
@@ -3744,6 +3779,13 @@
     </div>
   </div>
 
+  <div class="staff-call-banner" id="staffCallBanner" hidden>
+    <span class="eyebrow-dot"></span>
+    <strong>Customer is calling for help</strong>
+    <span class="staff-call-time" id="staffCallTime"></span>
+    <button type="button" class="btn btn-secondary btn-sm" id="ackStaffCallBtn">I'm on my way</button>
+  </div>
+
   <!-- Toggle bar -->
   <div class="session-toggle-bar">
     <div class="session-toggle">
@@ -5674,6 +5716,7 @@
     noteFeed.innerHTML = briefs.map(renderBriefCard).join('');
     updateLiveHeader();
     renderRouteMap();
+    checkExistingStaffCall().catch(e => console.warn('staff call check', e));
   }
 
   function updateLiveHeader() {
@@ -5912,6 +5955,74 @@
           console.info('Subscribed to live pins.');
         }
       });
+  }
+
+  let staffCallPollSessionId = null;
+
+  function formatStaffCallTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return 'Requested at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function showStaffCallCue(requestedAt, notify) {
+    const banner = document.getElementById('staffCallBanner');
+    const timeEl = document.getElementById('staffCallTime');
+    if (banner) {
+      banner.hidden = false;
+      banner.classList.add('pulse');
+    }
+    if (timeEl) timeEl.textContent = formatStaffCallTime(requestedAt);
+    if (notify !== false) showToast('Customer is asking for help');
+  }
+
+  function hideStaffCallCue() {
+    const banner = document.getElementById('staffCallBanner');
+    if (banner) {
+      banner.hidden = true;
+      banner.classList.remove('pulse');
+    }
+  }
+
+  function handleStaffCallSessionRow(row) {
+    if (!row || !row.staff_call_requested_at) return;
+    const tracked = getTrackedSessionId();
+    if (tracked && String(row.id) !== String(tracked)) return;
+    showStaffCallCue(row.staff_call_requested_at);
+  }
+
+  function subscribeToStaffCalls() {
+    if (!supabaseClient) return;
+    supabaseClient
+      .channel('sessions-staff-call')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'sessions'
+      }, payload => {
+        handleStaffCallSessionRow(payload.new);
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          console.info('Subscribed to staff call updates on sessions.');
+        }
+      });
+  }
+
+  async function checkExistingStaffCall() {
+    const sessionId = getTrackedSessionId();
+    if (!supabaseClient || !sessionId) return;
+    if (staffCallPollSessionId === sessionId) return;
+    staffCallPollSessionId = sessionId;
+    const { data, error } = await supabaseClient
+      .from('sessions')
+      .select('id,staff_call_requested_at')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (!error && data && data.staff_call_requested_at) {
+      showStaffCallCue(data.staff_call_requested_at, false);
+    }
   }
 
   // ===== Session summary (visit_summaries + realtime) — Session Summary view only =====
@@ -8410,15 +8521,23 @@
     }
   })();
 
-  loadInitialPins().catch(error => {
-    console.error(error);
-    if (noteFeed) {
-      noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud data. Check table permissions and reload.</div>';
-    }
-  });
+  loadInitialPins()
+    .then(() => checkExistingStaffCall())
+    .catch(error => {
+      console.error(error);
+      if (noteFeed) {
+        noteFeed.innerHTML = '<div class="feed-state">Could not load SnapCloud data. Check table permissions and reload.</div>';
+      }
+    });
   subscribeToPins();
+  subscribeToStaffCalls();
   subscribeToVisitSummaries();
   initReferenceImageNotesUI();
+
+  document.getElementById('ackStaffCallBtn')?.addEventListener('click', () => {
+    hideStaffCallCue();
+    showToast('Marked as on the way');
+  });
 </script>
 
 <!-- ====================================================== -->
