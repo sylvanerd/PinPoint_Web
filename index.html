@@ -1796,57 +1796,6 @@
     color: #131b2e;
     margin-bottom: 4px;
   }
-  #customerRecapExport .cr-note-img {
-    margin: 8px 0 0;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid #e0e3e5;
-    background: #eceef0;
-    max-height: 180px;
-  }
-  #customerRecapExport .cr-note-img img {
-    width: 100%;
-    max-height: 180px;
-    object-fit: cover;
-    display: block;
-  }
-  #customerRecapExport .cr-ref-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  #customerRecapExport .cr-ref-card {
-    border: 1px solid #e0e3e5;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-    page-break-inside: avoid;
-  }
-  #customerRecapExport .cr-ref-img {
-    height: 120px;
-    background: #eceef0;
-    overflow: hidden;
-  }
-  #customerRecapExport .cr-ref-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  #customerRecapExport .cr-ref-body {
-    padding: 10px 12px 12px;
-  }
-  #customerRecapExport .cr-ref-title {
-    font-weight: 600;
-    font-size: 12px;
-    color: #131b2e;
-    margin-bottom: 4px;
-  }
-  #customerRecapExport .cr-ref-notes {
-    font-size: 11px;
-    color: #45464d;
-    line-height: 1.4;
-  }
   #customerRecapExport .cr-note-quote {
     font-style: italic;
     color: #45464d;
@@ -8106,7 +8055,7 @@
           sentiment: sentimentText,
           sentimentKey: sentimentBucketFromLabel(sentimentText),
           time: note.querySelector('.note-time')?.textContent?.split('·')[0]?.trim() || '—',
-          imageUrl: note.querySelector('.capture-img')?.src || ''
+          imageUrl: ''
         };
       });
     }
@@ -8347,15 +8296,6 @@
       '.cr-note{border:1px solid #e0e3e5;border-radius:6px;padding:14px 16px;margin-bottom:10px;background:#fff;page-break-inside:avoid;}',
       '.cr-note-head{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#76777d;margin-bottom:6px;}',
       '.cr-note-product{font-weight:600;font-size:13px;color:#131b2e;margin-bottom:4px;}',
-      '.cr-note-img{margin:8px 0 0;border-radius:4px;overflow:hidden;border:1px solid #e0e3e5;background:#eceef0;max-height:180px;}',
-      '.cr-note-img img{width:100%;max-height:180px;object-fit:cover;display:block;}',
-      '.cr-ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}',
-      '.cr-ref-card{border:1px solid #e0e3e5;border-radius:6px;overflow:hidden;background:#fff;page-break-inside:avoid;}',
-      '.cr-ref-img{height:120px;background:#eceef0;overflow:hidden;}',
-      '.cr-ref-img img{width:100%;height:100%;object-fit:cover;display:block;}',
-      '.cr-ref-body{padding:10px 12px 12px;}',
-      '.cr-ref-title{font-weight:600;font-size:12px;color:#131b2e;margin-bottom:4px;}',
-      '.cr-ref-notes{font-size:11px;color:#45464d;line-height:1.4;}',
       '.cr-note-headline{font-weight:600;font-size:13px;color:#191c1e;margin-bottom:4px;}',
       '.cr-note-quote{font-style:italic;color:#45464d;font-size:13px;border-left:3px solid #006a61;padding-left:10px;margin:8px 0 0;}',
       '.cr-sentiment{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;}',
@@ -8400,7 +8340,6 @@
   function buildCustomerRecapHtml(doc) {
     const noteHtml = doc.notes.map(n => {
       const sk = n.sentimentKey || sentimentBucketFromLabel(n.sentiment);
-      const noteImgUrl = n.imageDataUrl || n.imageUrl;
       return (
         '<article class="cr-note">' +
         '<div class="cr-note-head">' +
@@ -8408,7 +8347,6 @@
         '<span class="cr-sentiment ' + sk + '">' + escapeHtml(n.sentiment) + '</span>' +
         '</div>' +
         '<div class="cr-note-product">' + escapeHtml(n.product) + '</div>' +
-        (noteImgUrl ? '<div class="cr-note-img"><img src="' + escapeHtml(noteImgUrl) + '" alt="" /></div>' : '') +
         (n.headline ? '<div class="cr-note-headline">' + escapeHtml(n.headline) + '</div>' : '') +
         (n.transcript ? '<blockquote class="cr-note-quote">&ldquo;' + escapeHtml(n.transcript) + '&rdquo;</blockquote>' : '') +
         '</article>'
@@ -8421,9 +8359,8 @@
 
     const recHtml = doc.recommendations.map((r, i) => {
       const meta = [r.sku, r.category, r.price].filter(Boolean).join(' · ');
-      const imgUrl = r.imageDataUrl || r.imageUrl;
-      const imgBlock = imgUrl
-        ? '<img src="' + escapeHtml(imgUrl) + '" alt="" />'
+      const imgBlock = r.imageUrl
+        ? '<img src="' + escapeHtml(r.imageUrl) + '" alt="" />'
         : (r.imageSvg ? r.imageSvg : productCardImageHtml(r, i));
       return (
         '<article class="cr-rec-card' + (r.highlightOffer ? ' cr-rec-card--featured' : '') + '">' +
@@ -8434,18 +8371,6 @@
         (meta ? '<div class="cr-rec-meta">' + escapeHtml(meta) + '</div>' : '') +
         '<div class="cr-rec-why"><strong>Why this is for you:</strong> ' + escapeHtml(r.reason) + '</div>' +
         (r.highlightOffer ? '<div class="cr-rec-offer">✦ Priority sample — ask for this one at the counter</div>' : '') +
-        '</div></article>'
-      );
-    }).join('');
-
-    const refHtml = (doc.referenceImages || []).map(ref => {
-      const imgUrl = ref.imageDataUrl || ref.imageUrl;
-      return (
-        '<article class="cr-ref-card">' +
-        (imgUrl ? '<div class="cr-ref-img"><img src="' + escapeHtml(imgUrl) + '" alt="" /></div>' : '') +
-        '<div class="cr-ref-body">' +
-        '<div class="cr-ref-title">' + escapeHtml(ref.title || 'Reference image') + '</div>' +
-        (ref.notes ? '<div class="cr-ref-notes">' + escapeHtml(ref.notes) + '</div>' : '') +
         '</div></article>'
       );
     }).join('');
@@ -8465,9 +8390,6 @@
 
       '<section class="cr-section"><h2>Your visit in a sentence</h2><p style="margin:0;">' + escapeHtml(doc.summaryText) + '</p></section>' +
       '<section class="cr-section"><h2>Your notes — in your words</h2>' + noteHtml + '</section>' +
-      (refHtml
-        ? '<section class="cr-section"><h2>Your reference images</h2><div class="cr-ref-grid">' + refHtml + '</div></section>'
-        : '') +
       '<section class="cr-section"><h2>What you liked</h2><div class="cr-chips">' + (chipHtml(doc.preferences.positive, false) || '—') + '</div></section>' +
       '<section class="cr-section"><h2>What gave you pause</h2><div class="cr-chips">' + (chipHtml(doc.preferences.concerns, true) || '—') + '</div></section>' +
 
@@ -8519,93 +8441,6 @@
     })));
   }
 
-  function imageUrlViaCanvas(url) {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-          if (!canvas.width || !canvas.height) {
-            resolve(null);
-            return;
-          }
-          canvas.getContext('2d').drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.88));
-        } catch (e) {
-          resolve(null);
-        }
-      };
-      img.onerror = () => resolve(null);
-      img.src = url;
-      setTimeout(() => resolve(null), 6000);
-    });
-  }
-
-  async function imageUrlToDataUrl(url) {
-    const trimmed = String(url || '').trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith('data:')) return trimmed;
-
-    async function fetchAsBlob(targetUrl) {
-      const baseOpts = { mode: 'cors', credentials: 'omit' };
-      let resp = await fetch(targetUrl, baseOpts);
-      if ((!resp || !resp.ok) && typeof SUPABASE_ANON_KEY !== 'undefined' && /snapcloud\.dev|supabase\.co/i.test(targetUrl)) {
-        resp = await fetch(targetUrl, {
-          ...baseOpts,
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: 'Bearer ' + SUPABASE_ANON_KEY
-          }
-        });
-      }
-      if (!resp || !resp.ok) return null;
-      return resp.blob();
-    }
-
-    try {
-      const blob = await fetchAsBlob(trimmed);
-      if (blob && blob.size) {
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      }
-    } catch (e) {
-      /* fall through to canvas */
-    }
-    return imageUrlViaCanvas(trimmed);
-  }
-
-  async function prepareCustomerRecapImages(doc) {
-    const cache = new Map();
-    async function resolve(url) {
-      const key = String(url || '').trim();
-      if (!key) return null;
-      if (cache.has(key)) return cache.get(key);
-      const promise = imageUrlToDataUrl(key);
-      cache.set(key, promise);
-      return promise;
-    }
-
-    await Promise.all([
-      ...doc.notes.map(async note => {
-        note.imageDataUrl = await resolve(note.imageUrl);
-      }),
-      ...doc.recommendations.map(async rec => {
-        rec.imageDataUrl = await resolve(rec.imageUrl);
-      }),
-      ...(doc.referenceImages || []).map(async ref => {
-        ref.imageDataUrl = await resolve(ref.imageUrl);
-      })
-    ]);
-    return doc;
-  }
-
   function pdfStatCell(value, label, bg, fg, labelColor) {
     return {
       table: {
@@ -8645,14 +8480,6 @@
       },
       { text: note.product, style: 'noteProduct' }
     ];
-    if (note.imageDataUrl) {
-      stack.push({
-        image: note.imageDataUrl,
-        width: 420,
-        fit: [420, 160],
-        margin: [0, 8, 0, 0]
-      });
-    }
     if (note.headline) stack.push({ text: note.headline, bold: true, margin: [0, 4, 0, 4] });
     if (note.transcript) {
       stack.push({
@@ -8683,9 +8510,7 @@
   function pdfRecCard(rec) {
     const meta = [rec.sku, rec.category, rec.price].filter(Boolean).join(' · ');
     const stack = [];
-    if (rec.imageDataUrl) {
-      stack.push({ image: rec.imageDataUrl, width: 230, fit: [230, 72], margin: [0, 0, 0, 6] });
-    } else if (rec.imageSvg) {
+    if (rec.imageSvg) {
       stack.push({ svg: rec.imageSvg, width: 230, height: 72, alignment: 'center', margin: [0, 0, 0, 6] });
     }
     stack.push(
@@ -8726,38 +8551,6 @@
     return rows;
   }
 
-  function pdfReferenceImageCard(ref) {
-    const stack = [];
-    if (ref.imageDataUrl) {
-      stack.push({ image: ref.imageDataUrl, width: 230, fit: [230, 120], margin: [0, 0, 0, 6] });
-    }
-    stack.push({ text: ref.title || 'Reference image', style: 'noteProduct', margin: [0, 0, 0, 4] });
-    if (ref.notes) stack.push({ text: ref.notes, style: 'body' });
-    return {
-      table: { widths: ['*'], body: [[{ stack, margin: [10, 10, 10, 12] }]] },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#e0e3e5',
-        vLineColor: () => '#e0e3e5',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0
-      }
-    };
-  }
-
-  function pdfReferenceImageRows(refs) {
-    const rows = [];
-    for (let i = 0; i < refs.length; i += 2) {
-      const left = pdfReferenceImageCard(refs[i]);
-      const right = refs[i + 1] ? pdfReferenceImageCard(refs[i + 1]) : { text: '' };
-      rows.push({ columns: [left, right], columnGap: 10, margin: [0, 0, 0, 10] });
-    }
-    return rows;
-  }
-
   function pdfChipList(items, concern) {
     if (!items.length) return { text: '—', style: 'muted', margin: [0, 0, 0, 4] };
     return {
@@ -8792,16 +8585,6 @@
       { text: doc.summaryText, style: 'lead', margin: [0, 0, 0, 4] },
       { text: 'YOUR NOTES — IN YOUR WORDS', style: 'sectionHead', margin: [0, 20, 0, 10] },
       ...doc.notes.map(pdfNoteCard),
-    ];
-
-    if (doc.referenceImages && doc.referenceImages.length) {
-      content.push(
-        { text: 'YOUR REFERENCE IMAGES', style: 'sectionHead', margin: [0, 20, 0, 10] },
-        ...pdfReferenceImageRows(doc.referenceImages)
-      );
-    }
-
-    content.push(
       { text: 'WHAT YOU LIKED', style: 'sectionHead', margin: [0, 20, 0, 8] },
       pdfChipList(doc.preferences.positive, false),
       { text: 'WHAT GAVE YOU PAUSE', style: 'sectionHead', margin: [0, 20, 0, 8] },
@@ -8960,21 +8743,19 @@
   function generateCustomerRecapPdfBlob(doc) {
     if (typeof pdfMake === 'undefined') return Promise.reject(new Error('pdfMake unavailable'));
     const filename = recapPdfFilename(doc);
-    return prepareCustomerRecapImages(doc).then(prepared => {
-      const dd = buildCustomerRecapPdfDefinition(prepared);
-      return new Promise((resolve, reject) => {
-        try {
-          pdfMake.createPdf(dd).getBlob(blob => {
-            if (!blob || !blob.size) {
-              reject(new Error('Empty PDF blob'));
-              return;
-            }
-            resolve({ blob, filename });
-          });
-        } catch (error) {
-          reject(error);
-        }
-      });
+    const dd = buildCustomerRecapPdfDefinition(doc);
+    return new Promise((resolve, reject) => {
+      try {
+        pdfMake.createPdf(dd).getBlob(blob => {
+          if (!blob || !blob.size) {
+            reject(new Error('Empty PDF blob'));
+            return;
+          }
+          resolve({ blob, filename });
+        });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -8988,7 +8769,6 @@
     showToast('Generating PDF…');
     try {
       const doc = buildCustomerRecapDocument();
-      showToast('Loading visit images…');
       const { blob, filename } = await generateCustomerRecapPdfBlob(doc);
       downloadPdfBlob(blob, filename);
       showToast('PDF downloaded — ' + filename);
