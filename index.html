@@ -3552,6 +3552,7 @@
   #view-product svg.floor { display: block; width: 100%; height: auto; }
 
   #view-product .room-rect { fill: rgba(255,255,255,0.5); stroke: var(--on-surface-variant); stroke-width: 1.5; }
+  #view-product .product-label { font-size: 11px; fill: var(--on-surface-variant); font-weight: 500; }
   #view-product .room-tag {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px; font-weight: 500;
@@ -4546,6 +4547,9 @@
               <rect class="room-rect" x="40" y="40" width="560" height="560" rx="3"/>
               <text class="room-tag" x="58" y="68">Showroom A 10m*10m</text>
             </g>
+
+            <!-- product name labels (static reference) -->
+            <g id="productNodes"></g>
 
             <!-- dynamic layer: routes OR heat -->
             <g id="layer"></g>
@@ -9159,6 +9163,17 @@
   let mode = 'route';        // 'route' | 'heat'
   let scope = 'all';         // 'all' | session id
 
+  /* ---------- static: product name labels (text only, no boxes) ---------- */
+  function drawProductLabels() {
+    const g = document.getElementById('productNodes');
+    g.innerHTML = '';
+    PRODUCTS.forEach(p => {
+      const t = el('text', { class:'product-label', x:p.x+14, y:p.y+4 });
+      t.textContent = p.name;
+      g.appendChild(t);
+    });
+  }
+
   /* ---------- ROUTE layer ---------- */
   function drawRoutes() {
     const layer = document.getElementById('layer');
@@ -9554,6 +9569,7 @@
   });
 
   refreshLiveSession();
+  drawProductLabels();
   buildScopeChips();
   renderBreakdown();
   renderRouteSummary();
