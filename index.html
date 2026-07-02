@@ -5312,6 +5312,7 @@
     realtimeChannel: null,
     refreshTimers: new Map()
   };
+  let sessionEnded = false;
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -7821,36 +7822,39 @@
   const summarySeg = document.getElementById('summarySeg');
   const liveSeg = document.querySelector('.seg[data-mode="live"]');
   const statusMeta = document.getElementById('sessionStatusMeta');
-  let sessionEnded = false;
 
-  endBtn.addEventListener('click', () => {
-    if (sessionEnded) {
-      sessionEnded = false;
-      summarySeg.classList.remove('ready');
-      summarySeg.classList.add('disabled');
-      liveSeg.classList.add('live-mode');
-      statusMeta.textContent = 'Active · 00:18:42';
-      endBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> End session';
-      segs.forEach(s => s.classList.remove('on'));
-      liveSeg.classList.add('on');
-      Object.values(modes).forEach(m => m.classList.remove('active'));
-      modes.live.classList.add('active');
-      updateSummaryTabAvailability();
-    } else {
-      sessionEnded = true;
-      updateSummaryTabAvailability();
-      liveSeg.classList.remove('live-mode');
-      statusMeta.textContent = 'Ended 15:08 · 46m';
-      endBtn.innerHTML = '↺ Reset demo';
-      endTrackedSessionOnPortal().then(ok => {
-        if (ok) {
-          showToast('Session ended. Summary ready to review.');
-        } else {
-          showToast('Session ended in portal; cloud sync failed — banner may return on refresh.');
-        }
-      });
-    }
-  });
+  if (endBtn && summarySeg && liveSeg && statusMeta) {
+    endBtn.addEventListener('click', () => {
+      if (sessionEnded) {
+        sessionEnded = false;
+        summarySeg.classList.remove('ready');
+        summarySeg.classList.add('disabled');
+        liveSeg.classList.add('live-mode');
+        statusMeta.textContent = 'Active · 00:18:42';
+        endBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> End session';
+        segs.forEach(s => s.classList.remove('on'));
+        liveSeg.classList.add('on');
+        Object.values(modes).forEach(m => m.classList.remove('active'));
+        modes.live.classList.add('active');
+        updateSummaryTabAvailability();
+      } else {
+        sessionEnded = true;
+        updateSummaryTabAvailability();
+        liveSeg.classList.remove('live-mode');
+        statusMeta.textContent = 'Ended 15:08 · 46m';
+        endBtn.innerHTML = '↺ Reset demo';
+        endTrackedSessionOnPortal().then(ok => {
+          if (ok) {
+            showToast('Session ended. Summary ready to review.');
+          } else {
+            showToast('Session ended in portal; cloud sync failed — banner may return on refresh.');
+          }
+        });
+      }
+    });
+  } else {
+    console.warn('End session controls missing from DOM — check #endSessionBtn and session toggle markup.');
+  }
 
   // ============ MATCHES TOGGLE ============
   function toggleMatches(btn) {
@@ -8055,7 +8059,7 @@
           sentiment: sentimentText,
           sentimentKey: sentimentBucketFromLabel(sentimentText),
           time: note.querySelector('.note-time')?.textContent?.split('·')[0]?.trim() || '—',
-          imageUrl: ''
+          imageUrl: note.querySelector('.capture-img')?.currentSrc || note.querySelector('.capture-img')?.src || ''
         };
       });
     }
@@ -8441,6 +8445,288 @@
     })));
   }
 
+  function loadedImgToDataUrl(img) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      if (!canvas.width || !canvas.height) return null;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      return canvas.toDataURL('image/jpeg', 0.88);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function findLoadedRecapImg(url) {
+    const trimmed = String(url || '').trim();
+    if (!trimmed) return null;
+    const base = trimmed.split('?')[0];
+    return [...document.querySelectorAll('img.capture-img, #summaryRecs img, .summary-ref img, .match img')]
+      .find(el => {
+        const src = el.currentSrc || el.src || '';
+        return src === trimmed || src.startsWith(base) || trimmed.startsWith(src.split('?')[0]);
+      }) || null;
+  }
+
+  function imageUrlViaCanvas(url) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          if (!canvas.width || !canvas.height) {
+            resolve(null);
+            return;
+          }
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.88));
+        } catch (e) {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+      setTimeout(() => resolve(null), 6000);
+    });
+  }
+
+  async function imageUrlToDataUrl(url) {
+    const trimmed = String(url || '').trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:')) return trimmed;
+    try {
+      let resp = await fetch(trimmed, { mode: 'cors', credentials: 'omit' });
+      if ((!resp || !resp.ok) && typeof SUPABASE_ANON_KEY !== 'undefined' && /snapcloud\.dev|supabase\.co/i.test(trimmed)) {
+        resp = await fetch(trimmed, {
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+          }
+        });
+      }
+      if (resp && resp.ok) {
+        const blob = await resp.blob();
+        if (blob && blob.size) {
+          return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (e) {
+      /* fall through */
+    }
+    const domImg = findLoadedRecapImg(trimmed);
+    if (domImg && domImg.complete && domImg.naturalWidth) {
+      const fromDom = loadedImgToDataUrl(domImg);
+      if (fromDom) return fromDom;
+    }
+    return imageUrlViaCanvas(trimmed);
+  }
+
+  async function prepareCustomerRecapImagesForPdf(doc) {
+    const cache = new Map();
+    async function resolve(url) {
+      const key = String(url || '').trim();
+      if (!key) return null;
+      if (cache.has(key)) return cache.get(key);
+      const promise = imageUrlToDataUrl(key);
+      cache.set(key, promise);
+      return promise;
+    }
+    await Promise.all([
+      ...doc.notes.map(async note => { note.imageDataUrl = await resolve(note.imageUrl); }),
+      ...doc.recommendations.map(async rec => { rec.imageDataUrl = await resolve(rec.imageUrl); }),
+      ...(doc.referenceImages || []).map(async ref => { ref.imageDataUrl = await resolve(ref.imageUrl); })
+    ]);
+    return doc;
+  }
+
+  const PDF_CONTENT_W = 499;
+  const PDF_INNER_W = PDF_CONTENT_W - 32;
+  const PDF_SNAP_IMG_W = 188;
+  const PDF_SNAP_IMG_H = 88;
+  const PDF_REC_IMG_W = 176;
+  const PDF_REC_IMG_H = 64;
+  const PDF_REF_IMG_W = 132;
+  const PDF_REF_IMG_H = 78;
+
+  function pdfImageFrame(imgSrc, maxW, maxH) {
+    return {
+      table: {
+        widths: [maxW + 12],
+        body: [[{
+          image: imgSrc,
+          fit: [maxW, maxH],
+          alignment: 'center',
+          margin: [6, 4, 6, 4]
+        }]]
+      },
+      layout: pdfNoBorderLayout('#eceef0'),
+      alignment: 'center'
+    };
+  }
+
+  function pdfBorderLayout(fillColor, borderColor, borderWidth) {
+    const w = borderWidth != null ? borderWidth : 1;
+    return {
+      fillColor: () => fillColor || null,
+      hLineWidth: () => w,
+      vLineWidth: () => w,
+      hLineColor: () => borderColor || '#e0e3e5',
+      vLineColor: () => borderColor || '#e0e3e5',
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0
+    };
+  }
+
+  function pdfNoBorderLayout(fillColor) {
+    return {
+      fillColor: () => fillColor || null,
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0
+    };
+  }
+
+  function pdfSectionTitle(title, margin, pageBreakBefore) {
+    return {
+      stack: [
+        { text: title, style: 'sectionHead' },
+        {
+          canvas: [{ type: 'line', x1: 0, y1: 0, x2: 88, y2: 0, lineWidth: 3, lineColor: '#006a61' }],
+          margin: [0, 6, 0, 0]
+        }
+      ],
+      margin: margin || [0, 26, 0, 12],
+      pageBreak: pageBreakBefore ? 'before' : undefined
+    };
+  }
+
+  function pdfShowroomCoverPage(doc) {
+    return {
+      stack: [
+        {
+          table: {
+            widths: ['*'],
+            body: [[{
+              columns: [
+                {
+                  stack: [
+                    { text: 'PINPOINT', style: 'coverBrand' },
+                    { text: 'Showroom visit recap', style: 'coverTagline' }
+                  ],
+                  width: '*'
+                },
+                { text: doc.sessionLabel, style: 'coverSession', width: 130, alignment: 'right' }
+              ],
+              margin: [22, 18, 22, 18]
+            }]]
+          },
+          layout: pdfNoBorderLayout('#131b2e')
+        },
+        {
+          stack: [
+            { text: 'Prepared for', style: 'coverEyebrow', margin: [0, 26, 0, 6] },
+            { text: doc.customerName, style: 'coverName' },
+            { text: doc.visitDate, style: 'coverDate', margin: [0, 4, 0, 0] },
+            { text: doc.narrativeHeadline, style: 'coverHeadline', margin: [0, 18, 0, 10] },
+            { text: doc.memoryOpener, style: 'coverIntro', margin: [0, 0, 0, 20] },
+            pdfHeroStatsRow(doc),
+            pdfSummaryCallout(doc.summaryText),
+            {
+              text: 'Inside this recap: every stop you made on the floor · your reactions in your own words · products we picked for you · what to do next.',
+              style: 'coverContents',
+              margin: [0, 18, 0, 0]
+            }
+          ]
+        }
+      ],
+      pageBreak: 'after'
+    };
+  }
+
+  function pdfHeroStatsRow(doc) {
+    return {
+      columns: [
+        pdfStatCell(doc.stats.briefs, 'Stops', '#eef8f6', '#006a61', '#005049'),
+        pdfStatCell(doc.stats.timeOnFloor, 'Time on floor', '#eef1fb', '#131b2e', '#45464d'),
+        pdfStatCell(doc.stats.budget, 'Budget band', '#faf6ee', '#8a6a1f', '#6b5420')
+      ],
+      columnGap: 12,
+      margin: [0, 0, 0, 0]
+    };
+  }
+
+  function pdfSummaryCallout(text) {
+    return {
+      table: {
+        widths: [4, '*'],
+        body: [[
+          { canvas: [{ type: 'rect', x: 0, y: 0, w: 4, h: 72, color: '#006a61' }] },
+          {
+            stack: [
+              { text: 'Your visit in a sentence', style: 'calloutLabel' },
+              { text: text, style: 'lead', margin: [0, 8, 0, 0] }
+            ],
+            margin: [16, 16, 18, 16]
+          }
+        ]]
+      },
+      layout: pdfNoBorderLayout('#f7f9fb'),
+      margin: [0, 16, 0, 0]
+    };
+  }
+
+  function pdfPreferenceBlock(title, items, variant) {
+    const palette = variant === 'neg'
+      ? { bg: '#fff8f8', border: '#ffdad6', title: '#7a1a1a', item: '#5c1515' }
+      : variant === 'neu'
+        ? { bg: '#fafafa', border: '#e0e3e5', title: '#45464d', item: '#45464d' }
+        : { bg: '#f0faf8', border: '#b8e8df', title: '#005049', item: '#005049' };
+    const listItems = items.length
+      ? items.map(item => ({ text: item, style: 'prefItem', color: palette.item, margin: [0, 0, 0, 4] }))
+      : [{ text: '—', style: 'muted' }];
+    return {
+      table: {
+        widths: ['*'],
+        body: [[{
+          stack: [
+            { text: title, bold: true, fontSize: 9, color: palette.title, margin: [0, 0, 0, 8] },
+            ...listItems
+          ],
+          margin: [14, 12, 14, 12]
+        }]]
+      },
+      layout: pdfBorderLayout(palette.bg, palette.border),
+      margin: [0, 0, 0, 8]
+    };
+  }
+
+  function pdfPreferencesStacked(doc, includeContext) {
+    const blocks = [
+      pdfPreferenceBlock('What you liked', doc.preferences.positive, 'pos'),
+      pdfPreferenceBlock('What gave you pause', doc.preferences.concerns, 'neg')
+    ];
+    if (includeContext) {
+      blocks.push(pdfPreferenceBlock('Context you mentioned', doc.preferences.context, 'neu'));
+    }
+    return { stack: blocks, margin: [0, 0, 0, 0] };
+  }
+
   function pdfStatCell(value, label, bg, fg, labelColor) {
     return {
       table: {
@@ -8466,86 +8752,214 @@
     };
   }
 
+  function pdfSentimentPill(label, fg, bg) {
+    return {
+      table: {
+        widths: ['auto'],
+        body: [[{
+          text: String(label || '').toUpperCase(),
+          fontSize: 7,
+          bold: true,
+          color: fg,
+          margin: [9, 5, 9, 5]
+        }]]
+      },
+      layout: pdfNoBorderLayout(bg)
+    };
+  }
+
   function pdfNoteCard(note) {
     const sk = note.sentimentKey || sentimentBucketFromLabel(note.sentiment);
     const badgeFg = sk === 'pos' ? '#005049' : sk === 'neg' ? '#ba1a1a' : '#45464d';
     const badgeBg = sk === 'pos' ? '#d6f5f0' : sk === 'neg' ? '#ffdad6' : '#eceef0';
-    const stack = [
-      {
-        columns: [
-          { text: 'Note #' + note.index + ' · ' + note.time, style: 'muted', width: '*' },
-          { text: String(note.sentiment).toUpperCase(), color: badgeFg, background: badgeBg, fontSize: 8, bold: true, margin: [0, 1, 0, 0], width: 'auto' }
-        ],
-        margin: [0, 0, 0, 6]
+    const accentColor = sk === 'pos' ? '#006a61' : sk === 'neg' ? '#ba1a1a' : '#76777d';
+    const stopLabel = 'Stop ' + String(note.index).padStart(2, '0');
+    const imgSrc = note.imageDataUrl || note.imageUrl;
+    const frameW = PDF_SNAP_IMG_W + 12;
+
+    const headerBand = {
+      table: {
+        widths: [5, '*', 'auto'],
+        body: [[
+          { canvas: [{ type: 'rect', x: 0, y: 0, w: 5, h: 44, color: accentColor }] },
+          {
+            stack: [
+              {
+                columns: [
+                  { text: stopLabel, style: 'stopLabel', width: 'auto' },
+                  { text: note.time, style: 'stopTime', width: 'auto', margin: [8, 0, 0, 0] }
+                ],
+                columnGap: 0
+              },
+              { text: note.product, style: 'noteProduct', margin: [0, 4, 0, 0] }
+            ],
+            margin: [12, 9, 8, 10]
+          },
+          {
+            stack: [pdfSentimentPill(note.sentiment, badgeFg, badgeBg)],
+            margin: [0, 8, 10, 0],
+            alignment: 'right'
+          }
+        ]]
       },
-      { text: note.product, style: 'noteProduct' }
-    ];
-    if (note.headline) stack.push({ text: note.headline, bold: true, margin: [0, 4, 0, 4] });
+      layout: pdfNoBorderLayout('#f2f4f6')
+    };
+
+    const textStack = [];
+    if (note.headline) {
+      textStack.push({ text: note.headline, style: 'noteHeadline', margin: [0, 0, 0, 6] });
+    }
     if (note.transcript) {
-      stack.push({
-        columns: [
-          { canvas: [{ type: 'rect', x: 0, y: 0, w: 3, h: 36, color: '#006a61' }], width: 3 },
-          { text: '\u201c' + note.transcript + '\u201d', italics: true, color: '#45464d', margin: [10, 0, 0, 0], width: '*' }
-        ],
-        margin: [0, 8, 0, 0]
+      textStack.push({
+        table: {
+          widths: [3, '*'],
+          body: [[
+            { canvas: [{ type: 'rect', x: 0, y: 0, w: 3, h: 40, color: accentColor }] },
+            { text: '\u201c' + note.transcript + '\u201d', style: 'noteQuote' }
+          ]]
+        },
+        layout: pdfNoBorderLayout(null)
       });
     }
+
+    const cardBody = [headerBand];
+
+    if (imgSrc && textStack.length) {
+      cardBody.push({
+        columns: [
+          {
+            width: frameW + 8,
+            stack: [pdfImageFrame(imgSrc, PDF_SNAP_IMG_W, PDF_SNAP_IMG_H)],
+            margin: [12, 8, 0, 10]
+          },
+          {
+            width: '*',
+            stack: textStack,
+            margin: [8, 8, 12, 10]
+          }
+        ],
+        columnGap: 6
+      });
+    } else if (imgSrc) {
+      cardBody.push({
+        stack: [pdfImageFrame(imgSrc, PDF_SNAP_IMG_W, PDF_SNAP_IMG_H)],
+        alignment: 'center',
+        margin: [0, 8, 0, 10]
+      });
+    } else if (textStack.length) {
+      cardBody.push({
+        stack: textStack,
+        margin: [14, 10, 14, 12]
+      });
+    }
+
     return {
-      table: { widths: ['*'], body: [[{ stack, margin: [14, 12, 14, 12] }]] },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#e0e3e5',
-        vLineColor: () => '#e0e3e5',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0
-      },
-      margin: [0, 0, 0, 8],
+      table: { widths: ['*'], body: [[{ stack: cardBody }]] },
+      layout: pdfBorderLayout('#ffffff', '#d0d3d6', 1),
+      margin: [0, 0, 0, 14],
       unbreakable: true
     };
   }
 
-  function pdfRecCard(rec) {
-    const meta = [rec.sku, rec.category, rec.price].filter(Boolean).join(' · ');
-    const stack = [];
-    if (rec.imageSvg) {
-      stack.push({ svg: rec.imageSvg, width: 230, height: 72, alignment: 'center', margin: [0, 0, 0, 6] });
-    }
-    stack.push(
-      { text: rec.name, style: 'recName' },
-      rec.score != null ? { text: rec.score + '% match · ' + (rec.sentiment || ''), style: 'recMatch', margin: [0, 4, 0, 2] } : null,
-      meta ? { text: meta, style: 'muted', margin: [0, 0, 0, 6] } : null,
-      { text: [{ text: 'Why this is for you: ', bold: true, color: '#131b2e' }, rec.reason], style: 'body' }
-    );
+  function pdfRecCard(rec, index) {
+    const meta = [rec.sku, rec.category, rec.price].filter(Boolean).join('  ·  ');
+    const headerStack = [
+      {
+        columns: [
+          { text: rec.name, style: 'recName', width: '*' },
+          rec.score != null
+            ? {
+                table: {
+                  widths: ['auto'],
+                  body: [[{ text: rec.score + '% match', style: 'recScoreBadge', margin: [8, 4, 8, 4] }]]
+                },
+                layout: pdfNoBorderLayout('#d6f5f0'),
+                width: 'auto'
+              }
+            : { text: '', width: 'auto' }
+        ],
+        columnGap: 8,
+        margin: [0, 0, 0, 6]
+      },
+      rec.sentiment
+        ? { text: String(rec.sentiment).toUpperCase(), style: 'recSentimentTag', margin: [0, 0, 0, 6] }
+        : null,
+      meta ? { text: meta, style: 'recMeta', margin: [0, 0, 0, 10] } : null,
+      { text: [{ text: 'Why we picked this: ', bold: true, color: '#131b2e' }, rec.reason], style: 'body' }
+    ].filter(Boolean);
+
     if (rec.highlightOffer) {
-      stack.push({
-        text: '✦ Priority sample — ask for this one at the counter',
+      headerStack.push({
+        text: '✦  Ask for a sample at the counter — we\'ll have this ready for you',
         style: 'offerTag',
-        margin: [0, 8, 0, 0]
+        margin: [0, 12, 0, 0]
       });
     }
+
+    const imgSrc = rec.imageDataUrl || rec.imageUrl;
+    const stack = [];
+    if (imgSrc) {
+      stack.push({
+        stack: [pdfImageFrame(imgSrc, PDF_REC_IMG_W, PDF_REC_IMG_H)],
+        alignment: 'center',
+        margin: [0, 10, 0, 0]
+      });
+      stack.push({
+        stack: headerStack,
+        margin: [16, 10, 16, 14]
+      });
+    } else if (rec.imageSvg) {
+      stack.push({ svg: rec.imageSvg, width: PDF_INNER_W, height: 80, alignment: 'center', margin: [0, 0, 0, 0] });
+      stack.push({ stack: headerStack, margin: [18, 14, 18, 16] });
+    } else {
+      stack.push({ stack: headerStack, margin: [18, 16, 18, 16] });
+    }
+
+    const borderColor = rec.highlightOffer ? '#006a61' : '#e0e3e5';
+    const fillColor = rec.highlightOffer ? '#f7fcfb' : '#ffffff';
+
     return {
-      table: { widths: ['*'], body: [[{ stack: stack.filter(Boolean), margin: [10, 10, 10, 12] }]] },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#e0e3e5',
-        vLineColor: () => '#e0e3e5',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0
-      }
+      table: { widths: ['*'], body: [[{ stack }]] },
+      layout: pdfBorderLayout(fillColor, borderColor, rec.highlightOffer ? 1.5 : 1),
+      margin: [0, 0, 0, 12],
+      unbreakable: true
     };
   }
 
   function pdfRecRows(recs) {
+    return recs.map((rec, i) => pdfRecCard(rec, i));
+  }
+
+  function pdfReferenceImageCard(ref) {
+    const imgSrc = ref.imageDataUrl || ref.imageUrl;
+    return {
+      table: {
+        widths: ['*'],
+        body: [[{
+          stack: [
+            imgSrc
+              ? {
+                  stack: [pdfImageFrame(imgSrc, PDF_REF_IMG_W, PDF_REF_IMG_H)],
+                  alignment: 'center',
+                  margin: [0, 0, 0, 8]
+                }
+              : null,
+            { text: ref.title || 'Reference image', style: 'refTitle', margin: [0, 0, 0, 4] },
+            ref.notes ? { text: ref.notes, style: 'refNotes' } : null
+          ].filter(Boolean),
+          margin: [10, 10, 10, 12]
+        }]]
+      },
+      layout: pdfBorderLayout('#ffffff', '#e0e3e5'),
+      unbreakable: true
+    };
+  }
+
+  function pdfReferenceImageRows(refs) {
     const rows = [];
-    for (let i = 0; i < recs.length; i += 2) {
-      const left = pdfRecCard(recs[i]);
-      const right = recs[i + 1] ? pdfRecCard(recs[i + 1]) : { text: '' };
+    for (let i = 0; i < refs.length; i += 2) {
+      const left = pdfReferenceImageCard(refs[i]);
+      const right = refs[i + 1] ? pdfReferenceImageCard(refs[i + 1]) : { text: '' };
       rows.push({ columns: [left, right], columnGap: 10, margin: [0, 0, 0, 10] });
     }
     return rows;
@@ -8560,147 +8974,168 @@
     };
   }
 
-  function buildCustomerRecapPdfDefinition(doc) {
-    const content = [
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 499, y2: 0, lineWidth: 3, lineColor: '#131b2e' }], margin: [0, 0, 0, 14] },
-      { text: 'PINPOINT', style: 'brand' },
-      { text: doc.narrativeHeadline, style: 'narrativeHeadline' },
-      { text: doc.memoryOpener, style: 'memoryOpener', margin: [0, 0, 0, 6] },
-      { text: doc.statsLine, style: 'statsSubtle', margin: [0, 0, 0, 16] },
-      {
-        columns: [
-          {
-            stack: [
-              { text: 'Prepared for', style: 'muted', margin: [0, 0, 0, 2] },
-              { text: doc.customerName, bold: true, fontSize: 11, color: '#131b2e' },
-              { text: doc.visitDate, style: 'muted', margin: [0, 2, 0, 0] }
-            ],
-            width: '*'
-          },
-          { text: doc.sessionLabel, style: 'session', width: 150, alignment: 'right' }
-        ],
-        margin: [0, 0, 0, 18]
-      },
-      { text: 'YOUR VISIT IN A SENTENCE', style: 'sectionHead', margin: [0, 4, 0, 8] },
-      { text: doc.summaryText, style: 'lead', margin: [0, 0, 0, 4] },
-      { text: 'YOUR NOTES — IN YOUR WORDS', style: 'sectionHead', margin: [0, 20, 0, 10] },
-      ...doc.notes.map(pdfNoteCard),
-      { text: 'WHAT YOU LIKED', style: 'sectionHead', margin: [0, 20, 0, 8] },
-      pdfChipList(doc.preferences.positive, false),
-      { text: 'WHAT GAVE YOU PAUSE', style: 'sectionHead', margin: [0, 20, 0, 8] },
-      pdfChipList(doc.preferences.concerns, true)
-    ];
-
-    if (doc.preferences.context.length && !doc.partnerInvitation) {
-      content.push(
-        { text: 'CONTEXT YOU MENTIONED', style: 'sectionHead', margin: [0, 20, 0, 8] },
-        pdfChipList(doc.preferences.context, false)
-      );
-    }
-
-    content.push({
-      table: {
-        widths: ['*'],
-        body: [[{
-          text: doc.emotionalBridge,
-          style: 'bridge',
-          margin: [16, 14, 16, 14]
-        }]]
-      },
-      layout: {
-        fillColor: () => '#eef8f6',
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#b8e8df',
-        vLineColor: () => '#b8e8df',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0
-      },
-      margin: [0, 20, 0, 10]
-    });
-
-    content.push(
-      { text: 'PICKED FOR YOU — AND WHY', style: 'sectionHead', margin: [0, 16, 0, 10] },
-      ...pdfRecRows(doc.recommendations)
-    );
-
-    const nextStack = [
-      { text: 'WHAT HAPPENS NEXT', style: 'sectionHead', margin: [0, 0, 0, 8] },
-      { text: doc.crossSessionHook, style: 'hook', margin: [0, 0, 0, 10] },
-      doc.partnerInvitation ? { text: doc.partnerInvitation, style: 'body', margin: [0, 0, 0, 10] } : null,
-      { text: doc.urgencyCta, bold: true, style: 'body', margin: [0, 0, 0, 10] },
-      { text: doc.nextVisitTeaser, italics: true, color: '#006a61', margin: [0, 0, 0, 10] },
+  function pdfClosingPage(doc) {
+    const nextItems = [
+      { text: doc.crossSessionHook, style: 'hook', margin: [0, 0, 0, 12] },
+      doc.partnerInvitation ? { text: doc.partnerInvitation, style: 'body', margin: [0, 0, 0, 12] } : null,
+      { text: doc.urgencyCta, bold: true, style: 'body', margin: [0, 0, 0, 12] },
+      { text: doc.nextVisitTeaser, style: 'teaser', margin: [0, 0, 0, 12] },
       { text: doc.shareCta, style: 'body', margin: [0, 0, 0, 0] }
     ].filter(Boolean);
 
-    content.push({
-      table: { widths: ['*'], body: [[{ stack: nextStack, margin: [16, 14, 16, 14] }]] },
-      layout: {
-        fillColor: () => '#f7f9fb',
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#e0e3e5',
-        vLineColor: () => '#e0e3e5',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0
-      },
-      margin: [0, 16, 0, 0]
-    });
+    return {
+      stack: [
+        pdfSectionTitle('Before you go', [0, 0, 0, 12], true),
+        {
+          table: {
+            widths: ['*'],
+            body: [[{
+              stack: nextItems,
+              margin: [20, 18, 20, 18]
+            }]]
+          },
+          layout: pdfBorderLayout('#f7f9fb', '#e0e3e5'),
+          margin: [0, 0, 0, 20]
+        },
+        {
+          table: {
+            widths: ['*'],
+            body: [[{
+              stack: [
+                { text: 'Your consultant', style: 'calloutLabel', color: '#86f2e4' },
+                { text: doc.staff.staffName, style: 'consultantName' },
+                { text: doc.staff.role, style: 'consultantRole', margin: [0, 4, 0, 0] },
+                { text: doc.staff.fromEmail, style: 'consultantEmail', margin: [0, 6, 0, 0] },
+                { text: 'Bring this recap back anytime — we\'ll pick up exactly where you left off.', style: 'consultantNote', margin: [0, 14, 0, 0] }
+              ],
+              margin: [22, 20, 22, 22]
+            }]]
+          },
+          layout: pdfNoBorderLayout('#131b2e')
+        }
+      ]
+    };
+  }
 
-    content.push({
-      text: [
-        { text: 'Questions? ', color: '#76777d' },
-        { text: doc.staff.staffName, bold: true, color: '#45464d' },
-        { text: ', ' + doc.staff.role + ' · ' + doc.staff.fromEmail, color: '#76777d' }
-      ],
-      margin: [0, 22, 0, 0],
-      fontSize: 9
-    });
+  function buildCustomerRecapPdfDefinition(doc) {
+    const hasContext = doc.preferences.context.length && !doc.partnerInvitation;
+    const content = [
+      pdfShowroomCoverPage(doc),
+      pdfSectionTitle('Your walk through the floor', [0, 0, 0, 12], false),
+      {
+        text: 'Everything you paused for — with snapshots and your reactions, exactly as you said them.',
+        style: 'sectionIntro',
+        margin: [0, 0, 0, 16]
+      },
+      ...doc.notes.map(pdfNoteCard)
+    ];
+
+    if (doc.referenceImages && doc.referenceImages.length) {
+      content.push(
+        pdfSectionTitle('Reference images you shared', [0, 8, 0, 12], true),
+        {
+          text: 'Magazine clippings, inspiration photos, and other references from your visit.',
+          style: 'sectionIntro',
+          margin: [0, 0, 0, 14]
+        },
+        ...pdfReferenceImageRows(doc.referenceImages)
+      );
+    }
+
+    content.push(
+      pdfSectionTitle('What stood out to you', [0, 8, 0, 12], true),
+      {
+        text: 'The preferences we heard — so you can share this with whoever\'s helping you decide.',
+        style: 'sectionIntro',
+        margin: [0, 0, 0, 14]
+      },
+      pdfPreferencesStacked(doc, hasContext),
+      {
+        table: {
+          widths: ['*'],
+          body: [[{
+            text: doc.emotionalBridge,
+            style: 'bridge',
+            margin: [20, 16, 20, 16]
+          }]]
+        },
+        layout: pdfBorderLayout('#eef8f6', '#b8e8df'),
+        margin: [0, 14, 0, 0]
+      }
+    );
+
+    content.push(
+      pdfSectionTitle('Your shortlist', [0, 8, 0, 12], true),
+      {
+        text: 'Products we matched to what you told us on the floor — and why each one fits.',
+        style: 'sectionIntro',
+        margin: [0, 0, 0, 16]
+      },
+      ...pdfRecRows(doc.recommendations),
+      pdfClosingPage(doc)
+    );
 
     return {
       pageSize: 'A4',
-      pageMargins: [48, 48, 48, 56],
+      pageMargins: [48, 54, 48, 72],
       info: {
         title: doc.subject,
         author: 'PinPoint Showroom',
         subject: 'Showroom visit recap'
       },
       footer: function(currentPage, pageCount) {
+        if (currentPage === 1) return { text: '' };
         return {
-          margin: [48, 8, 48, 24],
+          margin: [48, 16, 48, 36],
           columns: [
-            { text: 'PinPoint · We remember your visit', style: 'footer', width: '*' },
-            { text: currentPage + ' / ' + pageCount, style: 'footer', alignment: 'right', width: 40 }
+            { text: doc.customerName + '  ·  PinPoint Showroom Recap', style: 'footer', width: '*' },
+            { text: currentPage + ' / ' + pageCount, style: 'footer', alignment: 'right', width: 36 }
           ]
         };
       },
       content: content,
       styles: {
-        brand: { fontSize: 8, bold: true, color: '#006a61', characterSpacing: 1.5, margin: [0, 0, 0, 8] },
-        narrativeHeadline: { fontSize: 20, bold: true, color: '#131b2e', lineHeight: 1.2, margin: [0, 0, 0, 10] },
-        memoryOpener: { fontSize: 11, lineHeight: 1.5, color: '#45464d' },
-        statsSubtle: { fontSize: 8, color: '#76777d', characterSpacing: 0.3 },
-        meta: { fontSize: 9, color: '#76777d' },
-        session: { fontSize: 8, color: '#76777d', lineHeight: 1.35 },
-        sectionHead: { fontSize: 9, bold: true, color: '#006a61', characterSpacing: 0.8 },
-        lead: { fontSize: 11, lineHeight: 1.5, color: '#191c1e' },
-        body: { fontSize: 10, lineHeight: 1.45, color: '#191c1e' },
-        bridge: { fontSize: 10, lineHeight: 1.5, color: '#005049', italics: true },
-        hook: { fontSize: 10, lineHeight: 1.45, color: '#131b2e', bold: true },
+        coverBrand: { fontSize: 10, bold: true, color: '#86f2e4', characterSpacing: 2 },
+        coverTagline: { fontSize: 9, color: '#bec6e0', margin: [0, 4, 0, 0] },
+        coverSession: { fontSize: 8, color: '#bec6e0', lineHeight: 1.4 },
+        coverEyebrow: { fontSize: 9, color: '#76777d', characterSpacing: 0.5 },
+        coverName: { fontSize: 26, bold: true, color: '#131b2e', lineHeight: 1.15 },
+        coverDate: { fontSize: 10, color: '#76777d' },
+        coverHeadline: { fontSize: 14, bold: true, color: '#131b2e', lineHeight: 1.35 },
+        coverIntro: { fontSize: 11, lineHeight: 1.6, color: '#45464d' },
+        coverContents: { fontSize: 9, italics: true, color: '#76777d', lineHeight: 1.5 },
+        brand: { fontSize: 8, bold: true, color: '#006a61', characterSpacing: 1.5 },
+        sectionHead: { fontSize: 15, bold: true, color: '#131b2e', lineHeight: 1.2 },
+        sectionIntro: { fontSize: 10, lineHeight: 1.5, color: '#76777d' },
+        calloutLabel: { fontSize: 8, bold: true, color: '#006a61', characterSpacing: 0.8 },
+        lead: { fontSize: 13, lineHeight: 1.6, color: '#191c1e' },
+        body: { fontSize: 10.5, lineHeight: 1.55, color: '#191c1e' },
+        bridge: { fontSize: 10.5, lineHeight: 1.6, color: '#005049', italics: true },
+        hook: { fontSize: 11, lineHeight: 1.55, color: '#131b2e', bold: true },
+        teaser: { fontSize: 10.5, italics: true, color: '#006a61', lineHeight: 1.5 },
+        stopLabel: { fontSize: 8, bold: true, color: '#006a61', characterSpacing: 0.8 },
+        stopTime: { fontSize: 8, color: '#76777d' },
+        noteProduct: { fontSize: 13, bold: true, color: '#131b2e', lineHeight: 1.35 },
+        noteHeadline: { fontSize: 10.5, color: '#45464d', lineHeight: 1.45 },
+        noteQuote: { fontSize: 11, italics: true, color: '#191c1e', lineHeight: 1.55, margin: [12, 2, 0, 0] },
+        prefItem: { fontSize: 10, lineHeight: 1.45 },
+        refTitle: { fontSize: 11, bold: true, color: '#131b2e' },
+        refNotes: { fontSize: 9.5, color: '#45464d', lineHeight: 1.45 },
+        recName: { fontSize: 14, bold: true, color: '#131b2e', lineHeight: 1.25 },
+        recScoreBadge: { fontSize: 8, bold: true, color: '#005049' },
+        recSentimentTag: { fontSize: 7.5, bold: true, color: '#006a61', characterSpacing: 0.4 },
+        recMeta: { fontSize: 9, color: '#76777d' },
+        offerTag: { fontSize: 9, bold: true, color: '#006a61', lineHeight: 1.4 },
+        consultantName: { fontSize: 18, bold: true, color: '#ffffff', margin: [0, 8, 0, 0] },
+        consultantRole: { fontSize: 10, color: '#bec6e0' },
+        consultantEmail: { fontSize: 10, color: '#86f2e4' },
+        consultantNote: { fontSize: 9.5, italics: true, color: '#bec6e0', lineHeight: 1.5 },
+        statVal: { fontSize: 20, bold: true, lineHeight: 1.1 },
+        statLbl: { fontSize: 7.5, characterSpacing: 0.6, margin: [0, 5, 0, 0] },
         muted: { fontSize: 9, color: '#76777d' },
-        noteProduct: { fontSize: 11, bold: true, color: '#131b2e' },
-        chipList: { fontSize: 10, color: '#131b2e', lineHeight: 1.35 },
-        chipListConcern: { fontSize: 10, color: '#7a1a1a', lineHeight: 1.35 },
-        recName: { fontSize: 11, bold: true, color: '#131b2e' },
-        recMatch: { fontSize: 9, bold: true, color: '#006a61' },
-        offerTag: { fontSize: 8, bold: true, color: '#006a61' },
         footer: { fontSize: 8, color: '#76777d' }
       },
-      defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.4, color: '#191c1e' }
+      defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.5, color: '#191c1e' }
     };
   }
 
@@ -8743,19 +9178,21 @@
   function generateCustomerRecapPdfBlob(doc) {
     if (typeof pdfMake === 'undefined') return Promise.reject(new Error('pdfMake unavailable'));
     const filename = recapPdfFilename(doc);
-    const dd = buildCustomerRecapPdfDefinition(doc);
-    return new Promise((resolve, reject) => {
-      try {
-        pdfMake.createPdf(dd).getBlob(blob => {
-          if (!blob || !blob.size) {
-            reject(new Error('Empty PDF blob'));
-            return;
-          }
-          resolve({ blob, filename });
-        });
-      } catch (error) {
-        reject(error);
-      }
+    return prepareCustomerRecapImagesForPdf(doc).then(prepared => {
+      const dd = buildCustomerRecapPdfDefinition(prepared);
+      return new Promise((resolve, reject) => {
+        try {
+          pdfMake.createPdf(dd).getBlob(blob => {
+            if (!blob || !blob.size) {
+              reject(new Error('Empty PDF blob'));
+              return;
+            }
+            resolve({ blob, filename });
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
     });
   }
 
