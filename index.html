@@ -5741,6 +5741,30 @@
     return showroomState.briefs;
   }
 
+  // Bridge to the Showroom Insights IIFE: hand over the tracked session's
+  // positioned pins (meters, ascending created_at) so the insights route map
+  // and callout run off the same live data as the spatial map.
+  window.pinpointGetLiveRoute = function () {
+    const sessionId = getTrackedSessionId();
+    return showroomState.briefs
+      .filter(b => Number.isFinite(b.posX) && Number.isFinite(b.posZ))
+      .filter(b => !sessionId || b.sessionId === sessionId)
+      .slice()
+      .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+      .map(b => ({
+        id: b.id,
+        posX: b.posX,
+        posZ: b.posZ,
+        sentiment: sentimentClass(b.sentiment),
+        name: b.detectedProduct,
+        createdAt: b.createdAt
+      }));
+  };
+
+  function notifyRouteUpdated() {
+    document.dispatchEvent(new CustomEvent('pinpoint:route-updated'));
+  }
+
   function renderShowroomBriefs() {
     if (!noteFeed) return;
     const briefs = filteredBriefs();
@@ -5748,16 +5772,19 @@
       noteFeed.innerHTML = '<div class="feed-state">Waiting for spatial briefs from SnapCloud...</div>';
       updateLiveHeader();
       renderRouteMap();
+      notifyRouteUpdated();
       return;
     }
     if (!briefs.length) {
       noteFeed.innerHTML = '<div class="feed-state">No spatial briefs match this filter yet.</div>';
       renderRouteMap();
+      notifyRouteUpdated();
       return;
     }
     noteFeed.innerHTML = briefs.map(renderBriefCard).join('');
     updateLiveHeader();
     renderRouteMap();
+    notifyRouteUpdated();
   }
 
   function updateLiveHeader() {
@@ -8960,7 +8987,7 @@
   ];
 
   const SESSIONS = [
-    { id:'s-sylvan', customer:'Sylvan Marchetti', color:'#006a61', pins:[
+    { id:'s-sylvan', customer:'Demo Customer', color:'#006a61', pins:[
       { p:'laser',  t:1, s:'neg', dx: 8, dy:-10 },
       { p:'senso',  t:2, s:'pos', dx:-12, dy: 6 },
       { p:'topos',  t:3, s:'pos', dx: 10, dy: 8 },
@@ -9032,7 +9059,74 @@
     return n;
   };
   const sentColor = s => s === 'pos' ? 'var(--secondary)' : s === 'neg' ? 'var(--error)' : 'var(--warning)';
-  const pinXY = pin => { const p = prodById[pin.p]; return { x: p.x + (pin.dx||0), y: p.y + (pin.dy||0) }; };
+  // Seed pins snap to a product anchor + offset; live pins carry explicit viewBox coords.
+  const pinXY = pin => {
+    if (pin.x != null && pin.y != null) return { x: pin.x, y: pin.y };
+    const p = prodById[pin.p];
+    return { x: p.x + (pin.dx||0), y: p.y + (pin.dy||0) };
+  };
+  const nameOf = pin => pin.label || (prodById[pin.p] ? prodById[pin.p].name : String(pin.p || ''));
+  const escapeText = v => String(v ?? '')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'",'&#039;');
+
+  /* ================================================================
+     LIVE SESSION — real pins from the tracked SnapCloud session,
+     supplied by the main portal script via window.pinpointGetLiveRoute.
+     Replaces the seeded Sylvan session; other customers stay seeded.
+     Uses the same projection rules as the live spatial map: origin at
+     the earliest pin (bottom-center), depth upward, expand-only 5x5m
+     nominal bounds, single uniform scale.
+     ================================================================ */
+  const LIVE_SESSION_ID = 's-sylvan';
+  const LIVE_NOMINAL_HALF_X = 2.5; // metres each side of entry
+  const LIVE_NOMINAL_DEPTH = 5;    // metres of depth
+  const ROOM_X = 40, ROOM_Y = 40, ROOM_SIZE = 560; // floor rect in the 640 viewBox
+  const LIVE_PAD = ROOM_SIZE * 0.1;
+
+  function buildLiveSession() {
+    const briefs = typeof window.pinpointGetLiveRoute === 'function' ? window.pinpointGetLiveRoute() : [];
+    if (!briefs || !briefs.length) return null;
+
+    const origin = { x: briefs[0].posX, z: briefs[0].posZ };
+    const rel = briefs.map(b => ({ b, x: b.posX - origin.x, z: b.posZ - origin.z }));
+
+    // Expand-only bounds, X symmetric about the entry so it stays centered.
+    let halfX = LIVE_NOMINAL_HALF_X, zMax = LIVE_NOMINAL_DEPTH, zMin = 0;
+    rel.forEach(p => {
+      halfX = Math.max(halfX, Math.abs(p.x));
+      zMax = Math.max(zMax, p.z);
+      zMin = Math.min(zMin, p.z);
+    });
+
+    const inner = ROOM_SIZE - 2 * LIVE_PAD;
+    const scale = Math.min(inner / (halfX * 2), inner / (zMax - zMin));
+    const centerX = ROOM_X + ROOM_SIZE / 2;
+    const floorBottom = ROOM_Y + ROOM_SIZE - LIVE_PAD;
+
+    return {
+      id: LIVE_SESSION_ID,
+      customer: 'Demo Customer',
+      color: '#006a61',
+      live: true,
+      pins: rel.map((p, i) => ({
+        p: p.b.name || 'Pinned product',
+        label: p.b.name || '',
+        t: i + 1,
+        s: p.b.sentiment,
+        x: centerX + p.x * scale,
+        y: floorBottom - (p.z - zMin) * scale,
+        createdAt: p.b.createdAt
+      }))
+    };
+  }
+
+  let liveSession = null;
+  function refreshLiveSession() { liveSession = buildLiveSession(); }
+  function getSessions() {
+    if (!liveSession) return SESSIONS;
+    return SESSIONS.map(s => s.id === LIVE_SESSION_ID ? liveSession : s);
+  }
 
   /* ---------- state ---------- */
   let mode = 'route';        // 'route' | 'heat'
@@ -9054,8 +9148,9 @@
   function drawRoutes() {
     const layer = document.getElementById('layer');
     layer.innerHTML = '';
-    const sessions = scope === 'all' ? SESSIONS : SESSIONS.filter(s => s.id === scope);
-    const dimmed = scope === 'all' && SESSIONS.length > 1;
+    const all = getSessions();
+    const sessions = scope === 'all' ? all : all.filter(s => s.id === scope);
+    const dimmed = scope === 'all' && all.length > 1;
 
     sessions.forEach(sess => {
       const ordered = [...sess.pins].sort((a,b) => a.t - b.t);
@@ -9088,6 +9183,23 @@
           });
           num.textContent = (i+1);
           layer.appendChild(num);
+
+          // Live pins carry their own detected-product label (no static
+          // product anchor to lean on). Small font + truncation to fit.
+          if (sess.live && pin.label) {
+            const nearRight = x > 640 * 0.72;
+            const label = el('text', {
+              x: x + (nearRight ? -16 : 16), y: y + 4,
+              'text-anchor': nearRight ? 'end' : 'start',
+              'font-size':'11', 'font-weight':'600',
+              fill:'var(--on-surface-variant)'
+            });
+            label.textContent = pin.label.length > 20 ? pin.label.slice(0, 19) + '…' : pin.label;
+            const title = el('title', {});
+            title.textContent = pin.label;
+            label.appendChild(title);
+            layer.appendChild(label);
+          }
         }
       });
     });
@@ -9144,14 +9256,81 @@
     }
   }
 
+  /* 1-2 sentence insight computed from the scoped session's real pin data. */
+  function liveSessionInsight(sess) {
+    const ordered = [...sess.pins].sort((a,b) => a.t - b.t);
+    const n = ordered.length;
+    const pos = ordered.filter(p => p.s === 'pos').length;
+    const neg = ordered.filter(p => p.s === 'neg').length;
+
+    const firstName = escapeText(nameOf(ordered[0]));
+    const firstSent = ordered[0].s === 'pos' ? 'a positive reaction' : ordered[0].s === 'neg' ? 'a concern' : 'a neutral first look';
+
+    let duration = '';
+    const t0 = ordered[0].createdAt ? new Date(ordered[0].createdAt).getTime() : NaN;
+    const t1 = ordered[n-1].createdAt ? new Date(ordered[n-1].createdAt).getTime() : NaN;
+    if (Number.isFinite(t0) && Number.isFinite(t1) && t1 > t0) {
+      const mins = Math.max(1, Math.round((t1 - t0) / 60000));
+      duration = ` over ${mins} min`;
+    }
+
+    const first = `<strong>${escapeText(sess.customer)}</strong> pinned ${n} product${n === 1 ? '' : 's'}${duration}, opening at <strong>${firstName}</strong> with ${firstSent} — ${pos} liked · ${neg} concern${neg === 1 ? '' : 's'} overall.`;
+
+    // Second sentence: repeat visit beats trend beats fallback.
+    const counts = {};
+    ordered.forEach(p => { const k = nameOf(p); counts[k] = (counts[k] || 0) + 1; });
+    const repeat = Object.entries(counts).find(([, c]) => c > 1);
+    let second;
+    if (repeat) {
+      second = ` <strong>${escapeText(repeat[0])}</strong> drew a repeat visit — a sustained-interest signal worth leading with.`;
+    } else if (n >= 4) {
+      const half = Math.floor(n / 2);
+      const rate = arr => arr.filter(p => p.s === 'pos').length / arr.length;
+      const early = rate(ordered.slice(0, half));
+      const late = rate(ordered.slice(-half));
+      if (late - early > 0.2) second = ' Reactions warmed up along the route — momentum is with the later stops.';
+      else if (early - late > 0.2) second = ' Reactions cooled along the route — the strongest interest sits near the entry.';
+      else second = ' Sentiment held steady across the route.';
+    } else {
+      second = ' Numbered stops show pin order; more pins will sharpen this read.';
+    }
+    return first + second;
+  }
+
+  /* Aggregate sentence across all sessions (live + seeded), computed. */
+  function aggregateInsight(all) {
+    const firstTouch = {}, pairs = {};
+    all.forEach(s => {
+      const ordered = [...s.pins].sort((a,b) => a.t - b.t);
+      if (!ordered.length) return;
+      const fk = nameOf(ordered[0]);
+      firstTouch[fk] = (firstTouch[fk] || 0) + 1;
+      for (let i = 1; i < ordered.length; i++) {
+        const a = nameOf(ordered[i-1]), b = nameOf(ordered[i]);
+        if (a !== b) pairs[a + ' → ' + b] = (pairs[a + ' → ' + b] || 0) + 1;
+      }
+    });
+    const top = obj => Object.entries(obj).sort((a,b) => b[1] - a[1])[0];
+    const hook = top(firstTouch);
+    const seq = top(pairs);
+    let html = '<strong>Aggregate flow.</strong>';
+    if (hook) html += ` Most sessions open at <strong>${escapeText(hook[0])}</strong> (${hook[1]} of ${all.length}).`;
+    if (seq) html += ` The strongest move is <strong>${escapeText(seq[0])}</strong>, worth placing adjacent or bundling as a recommendation set.`;
+    return html;
+  }
+
   function renderCallout() {
     const c = document.getElementById('callout');
     if (mode === 'route') {
       if (scope === 'all') {
-        c.innerHTML = `<strong>Aggregate flow.</strong> Most sessions enter at the <strong>Senso / Topos</strong> cluster and drift across Showroom A. The <strong>Touch</strong> corner (lower left) sits off the dominant path, a candidate dead zone worth re-merchandising.`;
+        c.innerHTML = aggregateInsight(getSessions());
       } else {
-        const s = SESSIONS.find(x => x.id === scope);
-        c.innerHTML = `<strong>${s.customer}.</strong> Numbered stops show the order this customer pinned products. Repeated returns to one product signal sustained interest, not indecision.`;
+        const s = getSessions().find(x => x.id === scope);
+        if (s && s.pins.length) {
+          c.innerHTML = liveSessionInsight(s);
+        } else {
+          c.innerHTML = `<strong>${escapeText(s ? s.customer : 'Customer')}.</strong> No pins in this session yet.`;
+        }
       }
     } else {
       c.innerHTML = `<strong>Attention density.</strong> Reaction volume is concentrated on <strong>Senso</strong> and <strong>Topos</strong>. <strong>Carré</strong> and <strong>Touch</strong> draw far fewer reactions, useful for deciding what to move to the entry sightline.`;
@@ -9230,8 +9409,9 @@
   /* ---------- computed route summary ---------- */
   function renderRouteSummary() {
     const firstTouch = {}, pairs = {}, reach = {}, returns = {};
+    const allSessions = getSessions();
 
-    SESSIONS.forEach(s => {
+    allSessions.forEach(s => {
       const ordered = [...s.pins].sort((a,b)=>a.t-b.t);
       if (ordered.length) firstTouch[ordered[0].p] = (firstTouch[ordered[0].p]||0)+1;
       const seen = new Set();
@@ -9249,7 +9429,8 @@
     });
 
     const topKey = obj => Object.entries(obj).sort((a,b)=>b[1]-a[1])[0];
-    const nm = id => prodById[id] ? prodById[id].name : id;
+    // Seed pins key by product id; live pins key by detected-product name.
+    const nm = id => escapeText(prodById[id] ? prodById[id].name : id);
 
     const [hookId, hookN] = topKey(firstTouch) || [null,0];
     const seqTop = topKey(pairs);
@@ -9259,7 +9440,7 @@
     const reachAll = PRODUCTS.map(p => [p.id, reach[p.id]||0]).sort((a,b)=>a[1]-b[1]);
     const [coldId, coldN] = reachAll[0];
 
-    const total = SESSIONS.length;
+    const total = allSessions.length;
     document.getElementById('sessCount').textContent = total;
 
     const items = [
@@ -9271,7 +9452,7 @@
       {
         kicker: 'Strongest sequence',
         head: `${nm(seqA)} → ${nm(seqB)}`,
-        body: `${seqN} customers moved straight from one to the other. Worth placing them adjacent, or bundling as a recommendation set.`
+        body: `${seqN} customer${seqN===1?'':'s'} moved straight from one to the other. Worth placing them adjacent, or bundling as a recommendation set.`
       },
       {
         kicker: 'Deliberation signal',
@@ -9348,6 +9529,16 @@
     document.querySelectorAll('#breakdownBody tr').forEach(x => x.classList.remove('active'));
   });
 
+  /* ---------- live data refresh ---------- */
+  // Main portal script fires this whenever the tracked session's pins change
+  // (initial load + every Realtime INSERT/UPDATE/DELETE).
+  document.addEventListener('pinpoint:route-updated', () => {
+    refreshLiveSession();
+    renderRouteSummary();
+    render();
+  });
+
+  refreshLiveSession();
   drawProductNodes();
   buildScopeChips();
   renderBreakdown();
