@@ -386,6 +386,18 @@
     color: var(--on-surface-variant);
     margin-right: auto;
   }
+  .staff-call-banner .staff-call-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .staff-call-banner .staff-call-location {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+    line-height: 1.35;
+  }
   .staff-call-banner.pulse {
     animation: staffCallIn 0.45s ease both, staffCallPulse 1.4s ease-in-out infinite;
   }
@@ -3808,7 +3820,10 @@
 
   <div class="staff-call-banner" id="staffCallBanner" hidden>
     <span class="staff-call-dot"></span>
-    <strong>Customer is calling for help</strong>
+    <div class="staff-call-main">
+      <strong>Customer is calling for help</strong>
+      <span class="staff-call-location" id="staffCallLocation"></span>
+    </div>
     <span class="staff-call-time" id="staffCallTime"></span>
     <button type="button" class="btn btn-outline btn-sm staff-call-ack" id="ackStaffCallBtn">I'm on my way</button>
   </div>
@@ -5983,13 +5998,22 @@
       });
   }
 
-  const STAFF_CALL_DISMISS_STORAGE_KEY = 'pinpoint_staff_call_dismissed_v1';
+  const STAFF_CALL_DISMISS_STORAGE_KEY = 'pinpoint_staff_call_dismissed_v2';
+  const STAFF_CALL_SHOWROOM_LABEL = 'Showroom A 10m×10m';
   let staffCallState = {
     activeSessionId: null,
     lastRequestedAt: null,
     dismissedKey: null,
     suppressBanner: false
   };
+
+  function staffCallDismissStorage() {
+    try {
+      return window.localStorage;
+    } catch (_) {
+      return null;
+    }
+  }
 
   function staffCallEventKey(sessionId, requestedAt) {
     if (!sessionId || !requestedAt) return '';
@@ -5999,18 +6023,31 @@
   }
 
   function loadStaffCallDismissedKey() {
+    const store = staffCallDismissStorage();
+    if (!store) return '';
     try {
-      return sessionStorage.getItem(STAFF_CALL_DISMISS_STORAGE_KEY) || '';
+      return store.getItem(STAFF_CALL_DISMISS_STORAGE_KEY) || '';
     } catch (_) {
       return '';
     }
   }
 
   function saveStaffCallDismissedKey(key) {
+    const store = staffCallDismissStorage();
+    if (!store) return;
     try {
-      if (key) sessionStorage.setItem(STAFF_CALL_DISMISS_STORAGE_KEY, key);
-      else sessionStorage.removeItem(STAFF_CALL_DISMISS_STORAGE_KEY);
+      if (key) store.setItem(STAFF_CALL_DISMISS_STORAGE_KEY, key);
+      else store.removeItem(STAFF_CALL_DISMISS_STORAGE_KEY);
     } catch (_) {}
+  }
+
+  async function clearStaffCallInDb(sessionId) {
+    if (!supabaseClient || !sessionId || isDemoSessionId(sessionId)) return;
+    const { error } = await supabaseClient
+      .from('sessions')
+      .update({ staff_call_requested_at: null, staff_call_spatial_position: null })
+      .eq('id', sessionId);
+    if (error) console.warn('staff call clear', error);
   }
 
   function isStaffCallDismissed(sessionId, requestedAt) {
@@ -6039,7 +6076,145 @@
     return 'Requested at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function showStaffCallCue(requestedAt, notify, sessionId) {
+  function normalizeProductDisplayName(raw) {
+    if (!raw || raw === 'Detected product') return '';
+    const s = String(raw).toLowerCase();
+    if (s.includes('senso')) return 'Nobilia Senso';
+    if (s.includes('topos')) return 'Leicht Topos';
+    if (s.includes('laser')) return 'Nobilia Laser';
+    if (s.includes('touch')) return 'Nobilia Touch';
+    if (s.includes('pantry') || s.includes('chroma')) return 'Chroma Pantry';
+    if (s.includes('carré') || s.includes('carre') || s.includes('valais')) return 'Leicht Carré';
+    const trimmed = String(raw).trim();
+    return trimmed.length > 48 ? trimmed.slice(0, 45) + '…' : trimmed;
+  }
+
+  function getShowroomProductFixtures() {
+    const baseX = DEMO_ROUTE_BASE.x / 100;
+    const baseZ = DEMO_ROUTE_BASE.z / 100;
+    const fixtures = [];
+    const seen = new Set();
+    DEMO_ROUTE_PATH.forEach(point => {
+      const name = normalizeProductDisplayName(point.product);
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      fixtures.push({ name, posX: baseX + point.dx, posZ: baseZ + point.dz });
+    });
+    const extras = [
+      { name: 'Nobilia Laser', dx: -0.9, dz: 2.5 },
+      { name: 'Chroma Pantry', dx: 1.8, dz: 5.3 },
+      { name: 'Leicht Carré', dx: 2.2, dz: 4.5 }
+    ];
+    extras.forEach(item => {
+      if (seen.has(item.name)) return;
+      seen.add(item.name);
+      fixtures.push({ name: item.name, posX: baseX + item.dx, posZ: baseZ + item.dz });
+    });
+    return fixtures;
+  }
+
+  function collectProductAnchors(sessionId, extraPinRows) {
+    const anchors = [];
+    const seen = new Set();
+
+    function add(name, posX, posZ) {
+      const display = normalizeProductDisplayName(name);
+      if (!display || !Number.isFinite(posX) || !Number.isFinite(posZ)) return;
+      const key = display + '|' + posX.toFixed(2) + '|' + posZ.toFixed(2);
+      if (seen.has(key)) return;
+      seen.add(key);
+      anchors.push({ name: display, posX, posZ });
+    }
+
+    showroomState.briefs
+      .filter(b => String(b.sessionId) === String(sessionId) && Number.isFinite(b.posX) && Number.isFinite(b.posZ))
+      .forEach(b => add(b.detectedProduct, b.posX, b.posZ));
+
+    (extraPinRows || []).forEach(row => {
+      const pinPos = parseSpatialPosition(row.spatial_position);
+      if (pinPos) add(row.detected_product, pinPos.posX, pinPos.posZ);
+    });
+
+    getShowroomProductFixtures().forEach(fixture => add(fixture.name, fixture.posX, fixture.posZ));
+
+    return anchors;
+  }
+
+  function findNearestProductAnchor(pos, anchors) {
+    let best = null;
+    let bestD = Infinity;
+    anchors.forEach(anchor => {
+      const d = Math.hypot(anchor.posX - pos.posX, anchor.posZ - pos.posZ);
+      if (d < bestD) {
+        bestD = d;
+        best = anchor;
+      }
+    });
+    return best ? { name: best.name, distanceM: bestD } : null;
+  }
+
+  function formatStaffCallLocation(rawSpatial, sessionId, extraPinRows) {
+    const pos = parseSpatialPosition(rawSpatial);
+    if (!pos) return STAFF_CALL_SHOWROOM_LABEL + ' · location unknown';
+
+    const nearest = findNearestProductAnchor(pos, collectProductAnchors(sessionId, extraPinRows));
+    if (!nearest) return STAFF_CALL_SHOWROOM_LABEL + ' · location pending';
+
+    const d = nearest.distanceM;
+    if (d < 0.6) {
+      return STAFF_CALL_SHOWROOM_LABEL + ' · at ' + nearest.name;
+    }
+    if (d < 1.5) {
+      return STAFF_CALL_SHOWROOM_LABEL + ' · beside ' + nearest.name + ' (~' + d.toFixed(1) + 'm)';
+    }
+    if (d < 5) {
+      return STAFF_CALL_SHOWROOM_LABEL + ' · near ' + nearest.name + ' (~' + d.toFixed(1) + 'm)';
+    }
+    return STAFF_CALL_SHOWROOM_LABEL + ' · closest product: ' + nearest.name + ' (~' + d.toFixed(1) + 'm away)';
+  }
+
+  async function resolveStaffCallLocation(sessionId, spatialFromSession) {
+    let spatial = spatialFromSession;
+    let extraPins = [];
+
+    if (supabaseClient && sessionId && !isDemoSessionId(sessionId)) {
+      const { data, error } = await supabaseClient
+        .from('pins')
+        .select('spatial_position,detected_product,created_at')
+        .eq('session_id', sessionId)
+        .not('spatial_position', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(24);
+      if (!error && data) extraPins = data;
+    }
+
+    if (!spatial && extraPins.length && extraPins[0].spatial_position) {
+      spatial = extraPins[0].spatial_position;
+    }
+
+    if (!spatial) {
+      return STAFF_CALL_SHOWROOM_LABEL + ' · location pending';
+    }
+
+    return formatStaffCallLocation(spatial, sessionId, extraPins);
+  }
+
+  function updateStaffCallLocationText(sessionId, spatialRaw) {
+    const locEl = document.getElementById('staffCallLocation');
+    if (!locEl) return;
+    locEl.textContent = 'Locating customer…';
+    resolveStaffCallLocation(sessionId, spatialRaw)
+      .then(text => {
+        const banner = document.getElementById('staffCallBanner');
+        if (!banner || banner.hidden) return;
+        locEl.textContent = text;
+      })
+      .catch(() => {
+        locEl.textContent = STAFF_CALL_SHOWROOM_LABEL + ' · location unknown';
+      });
+  }
+
+  function showStaffCallCue(requestedAt, notify, sessionId, spatialPosition) {
     if (staffCallState.suppressBanner) return;
     const sid = sessionId || staffCallState.activeSessionId;
     if (!requestedAt || isStaffCallDismissed(sid, requestedAt)) return;
@@ -6056,17 +6231,20 @@
       banner.setAttribute('data-requested-at', requestedAt);
     }
     if (timeEl) timeEl.textContent = formatStaffCallTime(requestedAt);
+    updateStaffCallLocationText(sid, spatialPosition);
     if (notify !== false) showToast('Customer is asking for help');
   }
 
   function hideStaffCallCue() {
     const banner = document.getElementById('staffCallBanner');
+    const locEl = document.getElementById('staffCallLocation');
     if (banner) {
       banner.hidden = true;
       banner.setAttribute('aria-hidden', 'true');
       banner.classList.add('staff-call-banner--hidden');
       banner.classList.remove('pulse');
     }
+    if (locEl) locEl.textContent = '';
   }
 
   function dismissStaffCallCue() {
@@ -6086,6 +6264,7 @@
       saveStaffCallDismissedKey(key);
     }
     hideStaffCallCue();
+    clearStaffCallInDb(sid).catch(e => console.warn('staff call dismiss', e));
   }
 
   function handleStaffCallSessionRow(row, notify) {
@@ -6094,7 +6273,7 @@
       hideStaffCallCue();
       return;
     }
-    showStaffCallCue(row.staff_call_requested_at, notify, row.id);
+    showStaffCallCue(row.staff_call_requested_at, notify, row.id, row.staff_call_spatial_position);
   }
 
   function trackActiveSessionRow(row) {
@@ -6106,6 +6285,7 @@
     if (String(staffCallState.activeSessionId) === String(row.id)) {
       staffCallState.activeSessionId = null;
       staffCallState.lastRequestedAt = null;
+      staffCallState.suppressBanner = false;
     }
     hideStaffCallCue();
   }
@@ -6127,10 +6307,14 @@
         table: 'sessions'
       }, payload => {
         trackActiveSessionRow(payload.new);
-        if (!payload.new?.staff_call_requested_at) return;
-        const prev = payload.old?.staff_call_requested_at;
-        const next = payload.new.staff_call_requested_at;
-        const isFresh = !prev || String(prev) !== String(next);
+        const prevCall = payload.old?.staff_call_requested_at;
+        const nextCall = payload.new?.staff_call_requested_at;
+        if (prevCall && !nextCall) {
+          hideStaffCallCue();
+          return;
+        }
+        if (!nextCall) return;
+        const isFresh = !prevCall || String(prevCall) !== String(nextCall);
         if (!isFresh) return;
         staffCallState.suppressBanner = false;
         handleStaffCallSessionRow(payload.new, true);
@@ -6160,20 +6344,24 @@
 
   async function checkExistingStaffCall() {
     if (!supabaseClient) return;
+    staffCallState.dismissedKey = loadStaffCallDismissedKey();
     await syncActiveSessionFromDb();
     const { data, error } = await supabaseClient
       .from('sessions')
-      .select('id,staff_call_requested_at,status')
+      .select('id,staff_call_requested_at,staff_call_spatial_position,status')
+      .eq('status', 'active')
       .not('staff_call_requested_at', 'is', null)
       .order('staff_call_requested_at', { ascending: false })
-      .limit(8);
+      .limit(1)
+      .maybeSingle();
     if (error) {
       console.warn('staff call check', error);
       return;
     }
-    const row = (data || []).find(sessionRowIsLive);
-    if (row) {
-      showStaffCallCue(row.staff_call_requested_at, false, row.id);
+    if (data && sessionRowIsLive(data)) {
+      showStaffCallCue(data.staff_call_requested_at, false, data.id, data.staff_call_spatial_position);
+    } else {
+      hideStaffCallCue();
     }
   }
 
