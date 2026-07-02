@@ -160,10 +160,8 @@
     margin-bottom: 8px;
   }
   .brand-logo {
-    width: 32px; height: 32px;
-    border-radius: var(--r);
-    background: var(--primary);
-    object-fit: cover;
+    width: 34px; height: 34px;
+    object-fit: contain;
     display: block;
   }
   .brand-name {
@@ -5927,10 +5925,9 @@
     return grouped;
   }
 
-  // ===== Demo route (no Spectacles required) =====
-  // Pre-seeded fake customer whose fabricated spatial_position (cm) traces a
-  // plausible route. Flows through the identical normalizePin -> briefs -> render path.
-  const DEMO_ROUTE_FALLBACK = true;
+  // Reference layout for showroom product fixtures (meters offsets from a
+  // fixed origin, cm). Only used by getShowroomProductFixtures() to place
+  // named product anchors for the staff-call location feature.
   const DEMO_ROUTE_BASE = { x: 42.15, y: -75.2, z: 18.6 }; // arbitrary world origin in cm
   const DEMO_ROUTE_PATH = [
     { dx: 0.0, dz: 0.0, sentiment: 'positive', product: 'Nobilia Senso Smoked Oak' },
@@ -5941,44 +5938,10 @@
     { dx: -1.4, dz: 6.1, sentiment: 'neutral', product: 'Leicht Valais Fenix Matte' }
   ];
 
-  function buildDemoPinRows() {
-    const now = Date.now();
-    const total = DEMO_ROUTE_PATH.length;
-    return DEMO_ROUTE_PATH.map((p, i) => {
-      const ts = new Date(now - (total - i) * 40000).toISOString();
-      return {
-        id: 'demo-pin-' + (i + 1),
-        session_id: 'demo-session',
-        customer_id: 'demo-customer',
-        anchor_id: 'demo-pin-' + (i + 1),
-        detected_product: p.product,
-        summary_text: '',
-        transcribe_text: '',
-        sentiment: p.sentiment,
-        image_url: '',
-        spatial_position: {
-          x: DEMO_ROUTE_BASE.x + p.dx * 100,
-          y: DEMO_ROUTE_BASE.y,
-          z: DEMO_ROUTE_BASE.z + p.dz * 100
-        },
-        created_at: ts,
-        updated_at: ts
-      };
-    });
-  }
-
-  function seedDemoRoute() {
-    showroomState.briefs = [];
-    buildDemoPinRows().forEach(row => upsertBrief(normalizePin(row, [])));
-    renderShowroomBriefs();
-  }
-  window.pinpointSeedDemoRoute = seedDemoRoute;
-
   async function loadInitialPins() {
     if (!noteFeed) return;
     if (!supabaseClient) {
       noteFeed.innerHTML = '<div class="feed-state">Supabase client could not load. Check your internet connection and refresh.</div>';
-      if (DEMO_ROUTE_FALLBACK) seedDemoRoute();
       return;
     }
     noteFeed.innerHTML = '<div class="feed-state">Connecting to SnapCloud...</div>';
@@ -6006,10 +5969,6 @@
     pinRows.forEach(pin => {
       upsertBrief(normalizePin(pin, recommendationsByPin.get(pin.id) || []));
     });
-    if (DEMO_ROUTE_FALLBACK && !showroomState.briefs.length) {
-      seedDemoRoute();
-      return;
-    }
     renderShowroomBriefs();
     scheduleVisitSummarySync();
   }
